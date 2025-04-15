@@ -54,7 +54,6 @@ foreach ( $locations as $location ) {
 				$color = $term_color;
 			}
 			$term_icon_id = get_term_meta( $first_type->term_id, 'pam_icon', true );
-			var_dump( $term_icon_id );
 			$icon_url = '';
 			if ( $term_icon_id ) {
 				$icon_info = wp_get_attachment_image_src( $term_icon_id, 'thumbnail' );
@@ -64,13 +63,17 @@ foreach ( $locations as $location ) {
 			}
 		}
 
+		$thumb = get_the_post_thumbnail_url( $location->ID, 'medium' );
+
 		$location_data[] = array(
-			'title' => get_the_title( $location ),
-			'lat'   => $lat,
-			'lng'   => $lng,
-			'types' => wp_list_pluck( $types, 'slug' ),
-			'color' => $color,
-			'icon'  => $icon_url,
+			'title'   => get_the_title( $location ),
+			'lat'     => $lat,
+			'lng'     => $lng,
+			'types'   => wp_list_pluck( $types, 'slug' ),
+			'color'   => $color,
+			'icon'    => $icon_url,
+			'thumb'   => $thumb,
+			'url'     => get_permalink( $location ),
 		);
 
 	}
@@ -107,6 +110,21 @@ foreach ( $locations as $location ) {
 	}
 	.mapboxgl-marker img {
 
+	}
+	.mapboxgl-popup-content {
+		padding:0;
+		width: 220px;
+		height: auto;
+	}
+	.mapboxgl-popup-content img {
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+	.mapboxgl-popup-content p {
+		margin: 0;
+		padding: 0;
+		text-align: center;
 	}
 </style>
 
@@ -182,9 +200,21 @@ document.addEventListener('DOMContentLoaded', function () {
 				markerEl.appendChild(iconImg);
 			}
 
+
+			
+			const popupContent = loc.thumb
+				? `<a href="${loc.url}" style="text-decoration:none; color:inherit;">
+						<div style="text-align:center">
+							<img src="${loc.thumb}" alt="${loc.title}">
+							<p>${loc.title}</p>
+						</div>
+					</a>`
+				: `<a href="${loc.url}" style="text-decoration:none; color:inherit;"><p>${loc.title}</p></a>`;
+
+
 			const marker = new mapboxgl.Marker(markerEl)
 				.setLngLat([loc.lng, loc.lat])
-				.setPopup(new mapboxgl.Popup().setText(loc.title))
+				.setPopup(new mapboxgl.Popup({ offset: [0, 18] }).setHTML(popupContent))
 				.addTo(map);
 
 			markers.push(marker);
