@@ -124,32 +124,33 @@ document.addEventListener('DOMContentLoaded', function () {
 	const bounds = new mapboxgl.LngLatBounds();
 	let markers = [];
 
-	function brighten(hex, percent = 10) {
-		const num = parseInt(hex.slice(1), 16);
-		const r = Math.min(255, Math.floor((num >> 16) * (1 + percent / 100)));
-		const g = Math.min(255, Math.floor(((num >> 8) & 0x00FF) * (1 + percent / 100)));
-		const b = Math.min(255, Math.floor((num & 0x0000FF) * (1 + percent / 100)));
-		return `#${(1 << 24 | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
-	}
-
 	function renderMarkers(locations) {
 		markers.forEach(marker => marker.remove());
 		markers = [];
 
 		locations.forEach(loc => {
-			const baseColor = loc.color || '#2A3F87';
-			const brightColor = brighten(baseColor, 15);
+			const baseColor = loc.color || '#4a7789';
 
 			const svg = `
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 119.5 172" width="30" height="43">
-					<path fill="${brightColor}" d="M59.9,0v34.1c15,0,27.2,12.2,27.2,27.2s-12.2,27.2-27.2,27.2v75.6s10.3-21.2,19.4-47.9c23.4-8.1,40.2-30.3,40.2-56.5S92.8,0,59.9,0Z"/>
-					<path fill="${baseColor}" d="M59.9,88.5c-15,0-27.2-12.2-27.2-27.2s12.2-27.2,27.2-27.2h0V0c0,0-.1,0-.2,0C26.8,0,0,26.8,0,59.7s16.7,48.3,40.1,56.4c9.2,26.7,19.8,47.9,19.8,47.9v-75.6h0Z"/>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 119.5 164.1" width="30" height="43">
+					<defs>
+						<filter id="drop-shadow-1" x="-9.6" y="-3.1" width="139" height="179" filterUnits="userSpaceOnUse">
+							<feOffset dx="0" dy="4"/>
+							<feGaussianBlur result="blur" stdDeviation="2"/>
+							<feFlood flood-color="#000" flood-opacity=".8"/>
+							<feComposite in2="blur" operator="in"/>
+							<feComposite in="SourceGraphic"/>
+						</filter>
+					</defs>
+					<path fill="${baseColor}" stroke="#fff" stroke-width="4" stroke-miterlimit="10"
+						filter="url(#drop-shadow-1)"
+						d="M60,8.4s0,0-.1,0C30.2,8.4,6.1,32.4,6.1,62.2s15.1,43.5,36.1,50.8c8.3,24,17.9,43.2,17.9,43.2,0,0,9.2-19.1,17.4-43.1,21.1-7.3,36.2-27.3,36.2-50.8S89.7,8.4,60,8.4Z"/>
 				</svg>
 			`;
 
 			const markerEl = document.createElement('div');
 			markerEl.innerHTML = svg;
-			markerEl.style.transform = 'translate(-50%, -100%)'; // center bottom anchor
+			markerEl.style.transform = 'translate(-50%, -100%)'; // center base of marker
 
 			const marker = new mapboxgl.Marker(markerEl)
 				.setLngLat([loc.lng, loc.lat])
