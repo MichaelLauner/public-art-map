@@ -60,21 +60,35 @@ document.addEventListener('DOMContentLoaded', function () {
 	const map = new mapboxgl.Map({
 		container: 'pam-map',
 		style: 'mapbox://styles/mapbox/streets-v11',
-		center: [-104.820, 41.139],
-		zoom: 16,
 		pitch: 45,
 		bearing: 0,
 		antialias: true
 	});
 
+	const bounds = new mapboxgl.LngLatBounds();
+
 	map.addControl(new mapboxgl.NavigationControl());
 
 	pamLocations.forEach(loc => {
-	const marker = new mapboxgl.Marker()
-		.setLngLat([loc.lng, loc.lat])
-		.setPopup(new mapboxgl.Popup().setText(loc.title))
-		.addTo(map);
+		const marker = new mapboxgl.Marker()
+			.setLngLat([loc.lng, loc.lat])
+			.setPopup(new mapboxgl.Popup().setText(loc.title))
+			.addTo(map);
+
+		bounds.extend([loc.lng, loc.lat]);
 	});
+
+	if (pamLocations.length === 1) {
+		// Zoom in closer for single point
+		map.setCenter(bounds.getCenter());
+		map.setZoom(15);
+	} else if (pamLocations.length > 1) {
+		map.fitBounds(bounds, {
+			padding: 60,
+			maxZoom: 16,
+			duration: 1000
+		});
+	}
 
 	map.on('load', () => {
 		const layers = map.getStyle().layers;
