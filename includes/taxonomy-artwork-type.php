@@ -70,3 +70,56 @@ add_action( 'admin_footer', function() {
 	}
 });
 
+// Add image upload field to edit form
+add_action( 'artwork_type_edit_form_fields', 'pam_edit_term_icon_field', 10, 2 );
+function pam_edit_term_icon_field( $term, $taxonomy ) {
+	$icon_id = get_term_meta( $term->term_id, 'pam_icon', true );
+	$image_url = $icon_id ? wp_get_attachment_url( $icon_id ) : '';
+	?>
+	<tr class="form-field term-icon-wrap">
+		<th scope="row"><label for="pam_icon">Center Icon</label></th>
+		<td>
+			<input type="hidden" name="pam_icon" id="pam_icon" value="<?php echo esc_attr( $icon_id ); ?>">
+			<img id="pam_icon_preview" src="<?php echo esc_url( $image_url ); ?>" style="max-width: 50px; height: auto; display: <?php echo $image_url ? 'inline-block' : 'none'; ?>; margin-right: 10px;">
+			<button class="button pam-icon-upload">Upload</button>
+			<p class="description">Optional small PNG icon (ideally 24x24) to show in center of pin.</p>
+		</td>
+	</tr>
+	<?php
+}
+
+// Save the field
+add_action( 'edited_artwork_type', 'pam_save_term_icon_field', 10, 2 );
+function pam_save_term_icon_field( $term_id, $tt_id ) {
+	if ( isset( $_POST['pam_icon'] ) ) {
+		update_term_meta( $term_id, 'pam_icon', intval( $_POST['pam_icon'] ) );
+	}
+}
+
+// Enqueue media uploader
+add_action( 'admin_enqueue_scripts', function( $hook ) {
+	if ( isset($_GET['taxonomy']) && $_GET['taxonomy'] === 'artwork_type' ) {
+		wp_enqueue_media();
+		wp_add_inline_script( 'jquery-core', <<<JS
+			jQuery(document).ready(function($) {
+				$('.pam-icon-upload').on('click', function(e) {
+					e.preventDefault();
+					var input = $(this).siblings('input#pam_icon');
+					var preview = $(this).siblings('#pam_icon_preview');
+
+					var frame = wp.media({
+						title: 'Select Icon',
+						button: { text: 'Use this image' },
+						multiple: false
+					});
+					frame.on('select', function() {
+						var attachment = frame.state().get('selection').first().toJSON();
+						input.val(attachment.id);
+						preview.attr('src', attachment.url).show();
+					});
+					frame.open();
+				});
+			});
+		JS );
+	}
+});

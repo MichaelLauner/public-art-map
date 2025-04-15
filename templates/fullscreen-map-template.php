@@ -44,15 +44,23 @@ foreach ( $locations as $location ) {
 	if ( ! empty( $coords ) && strpos( $coords, ',' ) !== false ) {
 		list( $lat, $lng ) = array_map( 'floatval', explode( ',', $coords ) );
 		$types = wp_get_post_terms( $location->ID, 'artwork_type', array( 'fields' => 'all' ) );
-
-		// Get color from the first assigned taxonomy term
 		$first_type = $types[0] ?? null;
-		$color = '#4a7789'; // default fallback color
+		$color = '#4a7789';
+		$icon_url = null;
 
 		if ( $first_type ) {
 			$term_color = get_term_meta( $first_type->term_id, 'pam_color', true );
 			if ( $term_color ) {
 				$color = $term_color;
+			}
+			$term_icon_id = get_term_meta( $first_type->term_id, 'pam_icon', true );
+			var_dump( $term_icon_id );
+			$icon_url = '';
+			if ( $term_icon_id ) {
+				$icon_info = wp_get_attachment_image_src( $term_icon_id, 'thumbnail' );
+				if ( $icon_info ) {
+					$icon_url = esc_url_raw( $icon_info[0] );
+				}
 			}
 		}
 
@@ -62,7 +70,9 @@ foreach ( $locations as $location ) {
 			'lng'   => $lng,
 			'types' => wp_list_pluck( $types, 'slug' ),
 			'color' => $color,
+			'icon'  => $icon_url,
 		);
+
 	}
 }
 
@@ -94,6 +104,9 @@ foreach ( $locations as $location ) {
 		font-family: sans-serif;
 		max-height: 60vh;
 		overflow-y: auto;
+	}
+	.mapboxgl-marker img {
+
 	}
 </style>
 
@@ -151,6 +164,23 @@ document.addEventListener('DOMContentLoaded', function () {
 			const markerEl = document.createElement('div');
 			markerEl.innerHTML = svg;
 			markerEl.style.transform = 'translate(-50%, -100%)'; // center base of marker
+
+			// Optional icon overlay
+			if (loc.icon) {
+				const iconImg = document.createElement('img');
+				iconImg.src = loc.icon;
+				iconImg.style.position = 'absolute';
+				iconImg.style.left = '50%';
+				iconImg.style.top = '34%';
+				iconImg.style.width = '20px';
+				iconImg.style.height = '20px';
+				iconImg.style.transform = 'translate(-50%, -50%)';
+				iconImg.style.pointerEvents = 'none';
+				iconImg.style.zIndex = 1; // Ensure icon is above the SVG
+				iconImg.style.borderRadius = '50%';
+				iconImg.style.overflow = 'hidden';
+				markerEl.appendChild(iconImg);
+			}
 
 			const marker = new mapboxgl.Marker(markerEl)
 				.setLngLat([loc.lng, loc.lat])
