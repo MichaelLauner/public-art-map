@@ -172,3 +172,58 @@ function pam_save_location_meta_fields( $post_id ) {
     }
 }
 
+add_action( 'admin_init', 'pam_register_settings' );
+
+
+/**
+ * Register Settings for Public Art Map
+ */
+function pam_register_settings() {
+    add_settings_section(
+        'pam_settings_section',
+        'Public Art Map Settings',
+        '__return_null',
+        'reading' // show on Settings → Reading
+    );
+
+    add_settings_field(
+        'pam_map_page',
+        'Public Art Map Page',
+        'pam_map_page_dropdown',
+        'reading',
+        'pam_settings_section'
+    );
+
+    register_setting( 'reading', 'pam_map_page', array(
+        'type' => 'integer',
+        'sanitize_callback' => 'absint',
+        'default' => 0,
+    ));
+}
+
+function pam_map_page_dropdown() {
+    $selected = get_option( 'pam_map_page' );
+    wp_dropdown_pages(array(
+        'name'              => 'pam_map_page',
+        'selected'          => $selected,
+        'show_option_none'  => '-- Select a page --',
+        'option_none_value' => 0
+    ));
+}
+
+
+/**
+ * Load Custom Map Template
+ */
+add_filter( 'template_include', 'pam_load_custom_map_template' );
+
+function pam_load_custom_map_template( $template ) {
+    if ( is_admin() ) return $template;
+
+    $map_page_id = get_option( 'pam_map_page' );
+    if ( is_page( $map_page_id ) ) {
+        return plugin_dir_path( __FILE__ ) . 'templates/fullscreen-map-template.php';
+    }
+
+    return $template;
+}
