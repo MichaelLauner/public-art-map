@@ -178,27 +178,41 @@ add_action( 'admin_init', 'pam_register_settings' );
 /**
  * Register Settings for Public Art Map
  */
-function pam_register_settings() {
-    add_settings_section(
-        'pam_settings_section',
+add_action( 'admin_menu', 'pam_add_settings_page' );
+
+function pam_add_settings_page() {
+    add_options_page(
         'Public Art Map Settings',
+        'Public Art Map',
+        'manage_options',
+        'public-art-map',
+        'pam_render_settings_page'
+    );
+}
+
+add_action( 'admin_init', 'pam_register_settings' );
+
+function pam_register_settings() {
+    register_setting( 'pam_settings_group', 'pam_map_page', array(
+        'type' => 'integer',
+        'sanitize_callback' => 'absint',
+        'default' => 0,
+    ) );
+
+    add_settings_section(
+        'pam_main_settings',
+        'Map Display Settings',
         '__return_null',
-        'reading' // show on Settings → Reading
+        'public-art-map'
     );
 
     add_settings_field(
         'pam_map_page',
-        'Public Art Map Page',
+        'Map Display Page',
         'pam_map_page_dropdown',
-        'reading',
-        'pam_settings_section'
+        'public-art-map',
+        'pam_main_settings'
     );
-
-    register_setting( 'reading', 'pam_map_page', array(
-        'type' => 'integer',
-        'sanitize_callback' => 'absint',
-        'default' => 0,
-    ));
 }
 
 function pam_map_page_dropdown() {
@@ -209,6 +223,21 @@ function pam_map_page_dropdown() {
         'show_option_none'  => '-- Select a page --',
         'option_none_value' => 0
     ));
+}
+
+function pam_render_settings_page() {
+    ?>
+    <div class="wrap">
+        <h1>Public Art Map Settings</h1>
+        <form method="post" action="options.php">
+            <?php
+                settings_fields( 'pam_settings_group' );
+                do_settings_sections( 'public-art-map' );
+                submit_button();
+            ?>
+        </form>
+    </div>
+    <?php
 }
 
 
