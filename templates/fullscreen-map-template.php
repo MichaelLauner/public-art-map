@@ -43,16 +43,29 @@ foreach ( $locations as $location ) {
 	$coords = get_post_meta( $location->ID, 'pam_coordinates', true );
 	if ( ! empty( $coords ) && strpos( $coords, ',' ) !== false ) {
 		list( $lat, $lng ) = array_map( 'floatval', explode( ',', $coords ) );
-		$types = wp_get_post_terms( $location->ID, 'artwork_type', array( 'fields' => 'slugs' ) );
+		$types = wp_get_post_terms( $location->ID, 'artwork_type', array( 'fields' => 'all' ) );
+
+		// Get color from the first assigned taxonomy term
+		$first_type = $types[0] ?? null;
+		$color = '#4a7789'; // default fallback color
+
+		if ( $first_type ) {
+			$term_color = get_term_meta( $first_type->term_id, 'pam_color', true );
+			if ( $term_color ) {
+				$color = $term_color;
+			}
+		}
 
 		$location_data[] = array(
 			'title' => get_the_title( $location ),
 			'lat'   => $lat,
 			'lng'   => $lng,
-			'types' => $types,
+			'types' => wp_list_pluck( $types, 'slug' ),
+			'color' => $color,
 		);
 	}
 }
+
 ?>
 
 <style>
@@ -111,15 +124,38 @@ document.addEventListener('DOMContentLoaded', function () {
 	const bounds = new mapboxgl.LngLatBounds();
 	let markers = [];
 
+	function brighten(hex, percent = 10) {
+		const num = parseInt(hex.slice(1), 16);
+		const r = Math.min(255, Math.floor((num >> 16) * (1 + percent / 100)));
+		const g = Math.min(255, Math.floor(((num >> 8) & 0x00FF) * (1 + percent / 100)));
+		const b = Math.min(255, Math.floor((num & 0x0000FF) * (1 + percent / 100)));
+		return `#${(1 << 24 | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+	}
+
 	function renderMarkers(locations) {
 		markers.forEach(marker => marker.remove());
 		markers = [];
 
 		locations.forEach(loc => {
-			const marker = new mapboxgl.Marker()
+			const baseColor = loc.color || '#2A3F87';
+			const brightColor = brighten(baseColor, 15);
+
+			const svg = `
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 119.5 172" width="30" height="43">
+					<path fill="${brightColor}" d="M59.9,0v34.1c15,0,27.2,12.2,27.2,27.2s-12.2,27.2-27.2,27.2v75.6s10.3-21.2,19.4-47.9c23.4-8.1,40.2-30.3,40.2-56.5S92.8,0,59.9,0Z"/>
+					<path fill="${baseColor}" d="M59.9,88.5c-15,0-27.2-12.2-27.2-27.2s12.2-27.2,27.2-27.2h0V0c0,0-.1,0-.2,0C26.8,0,0,26.8,0,59.7s16.7,48.3,40.1,56.4c9.2,26.7,19.8,47.9,19.8,47.9v-75.6h0Z"/>
+				</svg>
+			`;
+
+			const markerEl = document.createElement('div');
+			markerEl.innerHTML = svg;
+			markerEl.style.transform = 'translate(-50%, -100%)'; // center bottom anchor
+
+			const marker = new mapboxgl.Marker(markerEl)
 				.setLngLat([loc.lng, loc.lat])
 				.setPopup(new mapboxgl.Popup().setText(loc.title))
 				.addTo(map);
+
 			markers.push(marker);
 			bounds.extend([loc.lng, loc.lat]);
 		});
