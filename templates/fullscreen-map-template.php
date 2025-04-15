@@ -1,8 +1,19 @@
 <?php
 /**
  * Template for Fullscreen Public Art Map
- */
-get_header();
+ */ ?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?>>
+<head>
+	<meta charset="<?php bloginfo( 'charset' ); ?>">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<?php wp_head(); ?>
+</head>
+<body <?php body_class(); ?>>
+
+<?php
+// Get the Mapbox API key from the settings
+
 $mapbox_key = get_option( 'pam_mapbox_api_key' );
 
 // Pin location data
@@ -113,16 +124,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			bounds.extend([loc.lng, loc.lat]);
 		});
 
-		if (locations.length === 1) {
-			map.setCenter(bounds.getCenter());
-			map.setZoom(15);
-		} else if (locations.length > 1) {
-			map.fitBounds(bounds, {
-				padding: 60,
-				maxZoom: 16,
-				duration: 1000
-			});
-		}
+		const isSmallScreen = window.innerWidth < 600;
+		map.fitBounds(bounds, { padding: isSmallScreen ? 100 : 200 });
 	}
 
 	function getSelectedTypes() {
@@ -190,4 +193,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<?php get_footer(); ?>
+<?php wp_footer(); ?>
+</body>
+</html>
