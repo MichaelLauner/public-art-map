@@ -108,13 +108,30 @@ foreach ( $locations as $location ) {
 		max-height: 60vh;
 		overflow-y: auto;
 	}
-	.mapboxgl-marker img {
-
+	.pam-marker-wrapper {
+		width: 30px;
+		height: 30px;
+		transform: translate(-50%, -100%);
+	}
+	.pam-marker-content {
+		width: 100%;
+		height: 100%;
+		background-size: cover;
+		background-position: center;
+		border-radius: 50%;
+		box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+		border: 2px solid white;
+		transition: transform 0.2s ease;
+	}
+	.pam-marker-content:hover {
+		transform: scale(5);
+		cursor: pointer;
 	}
 	.mapboxgl-popup-content {
 		padding:0;
 		width: 220px;
 		height: auto;
+		padding:5px;
 	}
 	.mapboxgl-popup-content img {
 		width: 100%;
@@ -123,8 +140,9 @@ foreach ( $locations as $location ) {
 	}
 	.mapboxgl-popup-content p {
 		margin: 0;
-		padding: 0;
 		text-align: center;
+		font-size:18px;
+		text-align:left;
 	}
 </style>
 
@@ -160,61 +178,26 @@ document.addEventListener('DOMContentLoaded', function () {
 		markers = [];
 
 		locations.forEach(loc => {
-			const baseColor = loc.color || '#4a7789';
+			const baseColor = loc.color || '#fff';
 
-			const svg = `
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 119.5 164.1" width="30" height="43">
-					<defs>
-						<filter id="drop-shadow-1" x="-9.6" y="-3.1" width="139" height="179" filterUnits="userSpaceOnUse">
-							<feOffset dx="0" dy="4"/>
-							<feGaussianBlur result="blur" stdDeviation="2"/>
-							<feFlood flood-color="#000" flood-opacity=".8"/>
-							<feComposite in2="blur" operator="in"/>
-							<feComposite in="SourceGraphic"/>
-						</filter>
-					</defs>
-					<path fill="${baseColor}" stroke="#fff" stroke-width="4" stroke-miterlimit="10"
-						filter="url(#drop-shadow-1)"
-						d="M60,8.4s0,0-.1,0C30.2,8.4,6.1,32.4,6.1,62.2s15.1,43.5,36.1,50.8c8.3,24,17.9,43.2,17.9,43.2,0,0,9.2-19.1,17.4-43.1,21.1-7.3,36.2-27.3,36.2-50.8S89.7,8.4,60,8.4Z"/>
-				</svg>
-			`;
+			const imageUrl = loc.thumb || loc.icon;
 
 			const markerEl = document.createElement('div');
-			markerEl.innerHTML = svg;
-			markerEl.style.transform = 'translate(-50%, -100%)'; // center base of marker
+			markerEl.className = 'pam-marker-wrapper';
 
-			// Optional icon overlay
-			if (loc.icon) {
-				const iconImg = document.createElement('img');
-				iconImg.src = loc.icon;
-				iconImg.style.position = 'absolute';
-				iconImg.style.left = '50%';
-				iconImg.style.top = '34%';
-				iconImg.style.width = '20px';
-				iconImg.style.height = '20px';
-				iconImg.style.transform = 'translate(-50%, -50%)';
-				iconImg.style.pointerEvents = 'none';
-				iconImg.style.zIndex = 1; // Ensure icon is above the SVG
-				iconImg.style.borderRadius = '50%';
-				iconImg.style.overflow = 'hidden';
-				markerEl.appendChild(iconImg);
-			}
+			const markerContent = document.createElement('div');
+			markerContent.className = 'pam-marker-content';
+			markerContent.style.backgroundImage = `url('${imageUrl}')`;
+			markerContent.style.backgroundColor = baseColor;
+			markerContent.style.border = '2px solid ' + baseColor;
 
-
+			markerEl.appendChild(markerContent);
 			
-			const popupContent = loc.thumb
-				? `<a href="${loc.url}" style="text-decoration:none; color:inherit;">
-						<div style="text-align:center">
-							<img src="${loc.thumb}" alt="${loc.title}">
-							<p>${loc.title}</p>
-						</div>
-					</a>`
-				: `<a href="${loc.url}" style="text-decoration:none; color:inherit;"><p>${loc.title}</p></a>`;
-
+			const popupContent = `<a href="${loc.url}" style="text-decoration:none; color:inherit;"><p><strong>${loc.title}</strong></a>`;
 
 			const marker = new mapboxgl.Marker(markerEl)
 				.setLngLat([loc.lng, loc.lat])
-				.setPopup(new mapboxgl.Popup({ offset: [0, 18] }).setHTML(popupContent))
+				.setPopup(new mapboxgl.Popup({ offset: [0, -25] }).setHTML(popupContent))
 				.addTo(map);
 
 			markers.push(marker);
