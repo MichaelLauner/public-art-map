@@ -196,7 +196,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			markerEl.appendChild(markerContent);
 			
-			// const popupContent = `<a href="${loc.url}" style="text-decoration:none; color:inherit;"><p><strong>${loc.title}</strong></a>`;
 			const popupContent = `
 				<span>
 					<p>

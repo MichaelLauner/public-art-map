@@ -17,3 +17,6 @@ require_once plugin_dir_path(__FILE__) . 'includes/assets.php';
 require_once plugin_dir_path(__FILE__) . 'includes/meta-fields.php';
 require_once plugin_dir_path(__FILE__) . 'includes/settings-page.php';
 require_once plugin_dir_path(__FILE__) . 'includes/template-loader.php';
+
+// Tools
+require_once plugin_dir_path(__FILE__) . 'includes/tools.php';
