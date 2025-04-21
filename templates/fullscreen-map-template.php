@@ -144,6 +144,9 @@ foreach ( $locations as $location ) {
 		font-size:18px;
 		text-align:left;
 	}
+	.mapboxgl-popup-content p small {
+		font-size:14px;
+	}
 </style>
 
 <div id="pam-filter">
@@ -193,7 +196,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			markerEl.appendChild(markerContent);
 			
-			const popupContent = `<a href="${loc.url}" style="text-decoration:none; color:inherit;"><p><strong>${loc.title}</strong></a>`;
+			// const popupContent = `<a href="${loc.url}" style="text-decoration:none; color:inherit;"><p><strong>${loc.title}</strong></a>`;
+			const popupContent = `
+				<span>
+					<p>
+					<strong><a href="${loc.url}" style="text-decoration:none; color:inherit;">${loc.title}</a></strong><br />
+					<a 
+						href="${loc.url}" 
+						style="text-decoration:none; color:inherit;" ><small>Information</small></a>&nbsp;|&nbsp; 
+					<a 
+						href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}&travelmode=walking" 
+						target="_blank" 
+						rel="noopener noreferrer"
+						style="text-decoration:none; color:inherit;" ><small>Directions</small></a>
+					</p>
+				</span>`;
 
 			const marker = new mapboxgl.Marker(markerEl)
 				.setLngLat([loc.lng, loc.lat])
