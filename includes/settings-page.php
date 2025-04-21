@@ -139,12 +139,15 @@ function pam_cron_autofill_checkbox_with_status() {
  */
 add_action( 'update_option_pam_cron_autofill_coords', 'pam_manage_cron_schedule', 10, 2 );
 function pam_manage_cron_schedule( $new_value, $old_value ) {
+	error_log("pam_manage_cron_schedule triggered. New: " . var_export($new_value, true));
+
 	if ( $new_value && ! wp_next_scheduled( 'pam_cron_fill_coordinates' ) ) {
+		error_log("Scheduling pam_cron_fill_coordinates...");
+		pam_run_cron_coordinate_fill();
 		wp_schedule_event( time() + 60, 'hourly', 'pam_cron_fill_coordinates' );
-		
-		// Trigger it manually once right away
 		do_action( 'pam_cron_fill_coordinates' );
 	} elseif ( ! $new_value ) {
+		error_log("Clearing pam_cron_fill_coordinates...");
 		wp_clear_scheduled_hook( 'pam_cron_fill_coordinates' );
 	}
 }

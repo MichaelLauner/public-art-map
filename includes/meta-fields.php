@@ -1,6 +1,27 @@
 <?php
-add_action( 'init', 'pam_register_meta_fields' );
+/**
+ * Public Art Map - Meta Fields
+ *
+ * @package Public Art Map
+ */
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly.
+}
 
+/**
+ * Enqueue Mapbox GL JS and CSS
+ */
+add_action( 'admin_enqueue_scripts', function( $hook ) {
+	if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
+		wp_enqueue_script( 'mapbox-gl', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js' );
+		wp_enqueue_style( 'mapbox-gl', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' );
+	}
+});
+
+/**
+ * Register Meta Fields for Map Location
+ */
+add_action( 'init', 'pam_register_meta_fields' );
 function pam_register_meta_fields() {
     register_post_meta( 'map_location', 'pam_artist', array(
         'show_in_rest'      => true,
@@ -100,7 +121,14 @@ function pam_render_location_meta_box( $post ) {
     $state = get_post_meta( $post->ID, 'pam_state', true );
     $zip = get_post_meta( $post->ID, 'pam_zip', true );
     $coordinates = get_post_meta( $post->ID, 'pam_coordinates', true );
-    $auto_geocode = get_post_meta( $post->ID, 'pam_auto_geocode', true ); ?>
+    $auto_geocode = get_post_meta( $post->ID, 'pam_auto_geocode', true );
+    
+    $mapbox_key = get_option( 'pam_mapbox_api_key' );
+    $coords = explode( ',', $coordinates );
+    $lat = floatval( $coords[0] ?? 41.139 ); // Default to Cheyenne
+    $lng = floatval( $coords[1] ?? -104.820 );
+    $has_coords = !empty( $coordinates ) && strpos( $coordinates, ',' ) !== false;
+    ?>
 
     <p>
         <label for="pam_artist"><strong>Artist:</strong></label><br>
@@ -110,6 +138,38 @@ function pam_render_location_meta_box( $post ) {
         <label for="pam_description"><strong>Short Description (max 280 characters):</strong></label><br>
         <textarea name="pam_description" id="pam_description" maxlength="280" rows="4" style="width:100%;"><?php echo esc_textarea( $description ); ?></textarea>
     </p>
+    <?php
+    if ( $has_coords ) {
+        list( $lat, $lng ) = array_map( 'floatval', explode( ',', $coordinates ) ); ?>
+        <p>
+            <label><strong>Map Preview:</strong></label>
+            <div id="pam-map-admin" style="height: 300px; width: 100%; margin-top: 10px;"></div>
+        </p>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            mapboxgl.accessToken = '<?php echo esc_js( get_option( 'pam_mapbox_api_key' ) ); ?>';
+
+            const map = new mapboxgl.Map({
+                container: 'pam-map-admin',
+                style: 'mapbox://styles/mapbox/streets-v11',
+                center: [<?php echo $lng; ?>, <?php echo $lat; ?>],
+                zoom: 15
+            });
+
+            const marker = new mapboxgl.Marker({ draggable: true })
+                .setLngLat([<?php echo $lng; ?>, <?php echo $lat; ?>])
+                .addTo(map);
+
+            marker.on('dragend', function () {
+                const lngLat = marker.getLngLat();
+                document.getElementById('pam_coordinates').value =
+                    `${lngLat.lat.toFixed(6)},${lngLat.lng.toFixed(6)}`;
+            });
+        });
+        </script>
+        <?php
+    } ?>
     <p>
         <label for="pam_address"><strong>Address:</strong></label><br>
         <input type="text" name="pam_address" id="pam_address" value="<?php echo esc_attr( $address ); ?>" style="width:100%;">
@@ -127,8 +187,8 @@ function pam_render_location_meta_box( $post ) {
         <input type="text" name="pam_zip" id="pam_zip" value="<?php echo esc_attr( $zip ); ?>" style="width:100%;">
     </p>
     <p>
-        <label for="pam_coordinates"><strong>Coordinates (lat,lng):</strong></label><br>
-        <input type="text" name="pam_coordinates" id="pam_coordinates" value="<?php echo esc_attr( $coordinates ); ?>" style="width:100%;" placeholder="e.g. 41.139,-104.820">
+        <label><strong>Coordinates:</strong></label><br>
+        <input type="text" name="pam_coordinates" id="pam_coordinates" value="<?php echo esc_attr( $coordinates ); ?>" style="width:100%;" readonly>
     </p>
     <p>
         <label>
@@ -181,7 +241,6 @@ add_action( 'admin_init', 'pam_register_settings' );
  * Auto Geocode Coordinates
  */
 add_action( 'save_post_map_location', 'pam_geocode_coordinates_on_save', 20, 2 );
-
 function pam_geocode_coordinates_on_save( $post_id, $post ) {
 	if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
 	if ( ! current_user_can( 'edit_post', $post_id ) ) return;
@@ -197,6 +256,7 @@ function pam_geocode_coordinates_on_save( $post_id, $post ) {
 	if ( ! $address && ! $city && ! $state && ! $zip ) return;
 
 	$full_address = implode( ', ', array_filter( [ $address, $city, $state, $zip ] ) );
+
 	$mapbox_token = get_option( 'pam_mapbox_api_key' );
 
 	$request_url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' . urlencode( $full_address ) . '.json?access_token=' . $mapbox_token;
