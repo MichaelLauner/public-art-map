@@ -13,10 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 add_action( 'admin_enqueue_scripts', function( $hook ) {
 	if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
+        wp_enqueue_media();
+
+        wp_enqueue_script( 'jquery-ui-sortable' );
+
 		wp_enqueue_script( 'mapbox-gl', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js' );
 		wp_enqueue_style( 'mapbox-gl', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' );
+
+        wp_enqueue_script( 'pam-gallery-js', plugin_dir_url(__FILE__).'../js/pam-gallery.js', [ 'jquery' ], '1.0', true );
+        wp_enqueue_style(  'pam-gallery-css', plugin_dir_url(__FILE__).'../css/pam-gallery.css' );
 	}
 });
+
 
 /**
  * Register Meta Fields for Map Location
@@ -96,6 +104,7 @@ function pam_register_meta_fields() {
     ) );
 
 }
+
 
 /**
  * Add Meta Box for Location Details
@@ -302,3 +311,70 @@ add_action( 'admin_notices', function() {
 	}
 } );
 
+/**
+ * Register Meta Fields for Gallery
+ */
+add_action( 'init', 'pam_register_gallery_meta' );
+function pam_register_gallery_meta() {
+    register_post_meta( 'map_location', 'pam_images', [
+        'show_in_rest'      => true,
+        'single'            => true,
+        'type'              => 'array',
+        'auth_callback'     => function() {
+            return current_user_can( 'edit_posts' );
+        },
+        'sanitize_callback' => 'pam_sanitize_images',
+    ] );
+}
+
+function pam_sanitize_images( $value ) {
+    // Expect array of ints
+    if ( ! is_array( $value ) ) {
+        return [];
+    }
+    return array_map( 'absint', $value );
+}
+
+/**
+ * Add Meta Box for Gallery
+ */
+add_action( 'add_meta_boxes', function() {
+    add_meta_box( 'pam_gallery', 'Gallery Images', 'pam_render_gallery_metabox', 'map_location', 'normal', 'default' );
+} );
+
+/**
+ * Render Gallery Meta Box
+ */
+function pam_render_gallery_metabox( $post ) {
+    $images = get_post_meta( $post->ID, 'pam_images', true ) ?: [];
+    ?>
+    <div id="pam-gallery-wrapper">
+        <ul id="pam-gallery-list">
+        <?php foreach ( $images as $attachment_id ): 
+            $thumb = wp_get_attachment_image_src( $attachment_id, 'thumbnail' );
+            if ( ! $thumb ) continue;
+        ?>
+            <li data-id="<?php echo esc_attr( $attachment_id ); ?>">
+                <img src="<?php echo esc_url( $thumb[0] ); ?>" />
+                <button class="remove-image">×</button>
+            </li>
+        <?php endforeach; ?>
+        </ul>
+        <input type="hidden" id="pam_images" name="pam_images" value="<?php echo esc_attr( implode( ',', $images ) ); ?>" />
+        <p>
+            <button type="button" class="button" id="pam-add-images">Add Images</button>
+        </p>
+    </div>
+    <?php
+}
+
+/**
+ * Save Gallery Images
+ */
+add_action( 'save_post_map_location', function( $post_id ){
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
+    if ( isset($_POST['pam_images']) ) {
+        $ids = array_filter( explode( ',', sanitize_text_field($_POST['pam_images']) ) );
+        update_post_meta( $post_id, 'pam_images', $ids );
+    }
+}, 20 );
