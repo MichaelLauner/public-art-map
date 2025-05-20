@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
 // Post Type and Taxonomy Registration
 require_once plugin_dir_path(__FILE__) . 'includes/cpt-map-location.php';
 require_once plugin_dir_path(__FILE__) . 'includes/taxonomy-artwork-type.php';
+require_once plugin_dir_path(__FILE__) . 'includes/taxonomy-artwork-collection.php';
 
 require_once plugin_dir_path(__FILE__) . 'includes/assets.php';
 require_once plugin_dir_path(__FILE__) . 'includes/meta-fields.php';

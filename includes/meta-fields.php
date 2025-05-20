@@ -378,3 +378,37 @@ add_action( 'save_post_map_location', function( $post_id ){
         update_post_meta( $post_id, 'pam_images', $ids );
     }
 }, 20 );
+
+
+// This is our meta import list of fields, saving here for easy cut/paste
+// {primaryimageurl[1]}
+// {additionalimage1url[1]}
+// {additionalimage2url[1]}
+// {additionalimage3url[1]}
+// {additionalimage4url[1]}
+// {additionalimage5url[1]}
+// {additionalimage6url[1]}
+// {additionalimage7url[1]}
+// {additionalimage8url[1]}
+// {additionalimage9url[1]}
+// {additionalimage10url[1]}
+// {additionalimage11url[1]}
+// {additionalimage12url[1]}
+// {additionalimage13url[1]}
+// {additionalimage14url[1]}
+// {additionalimage15url[1]}
+// {additionalimage16url[1]}
+// {additionalimage17url[1]}
+// {additionalimage18url[1]}
+// {additionalimage19url[1]}
+// {additionalimage20url[1]}
+// {additionalimage21url[1]}
+// {additionalimage22url[1]}
+// {additionalimage23url[1]}
+// {additionalimage24url[1]}
+// {additionalimage25url[1]}
+// {additionalimage26url[1]}
+// {additionalimage27url[1]}
+// {additionalimage28url[1]}
+// {additionalimage29url[1]}
+// {additionalimage30url[1]}
