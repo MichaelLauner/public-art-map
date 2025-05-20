@@ -15,17 +15,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action( 'init', 'pam_register_artwork_collection_taxonomy' );
 function pam_register_artwork_collection_taxonomy() {
     $labels = array(
-        'name'              => 'Artwork Collections',
-        'singular_name'     => 'Artwork Collection',
-        'search_items'      => 'Search Artwork Collections',
-        'all_items'         => 'All Artwork Collections',
+        'name'              => 'Collections',
+        'singular_name'     => 'Collection',
+        'search_items'      => 'Search Collections',
+        'all_items'         => 'All Collections',
         'parent_item'       => 'Parent Collection',
         'parent_item_colon' => 'Parent Collection:',
         'edit_item'         => 'Edit Collection',
         'update_item'       => 'Update Collection',
         'add_new_item'      => 'Add New Collection',
         'new_item_name'     => 'New Collection Name',
-        'menu_name'         => 'Artwork Collections',
+        'menu_name'         => 'Collections',
     );
 
     $args = array(

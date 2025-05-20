@@ -43,8 +43,12 @@ foreach ( $locations as $location ) {
 	$coords = get_post_meta( $location->ID, 'pam_coordinates', true );
 	if ( ! empty( $coords ) && strpos( $coords, ',' ) !== false ) {
 		list( $lat, $lng ) = array_map( 'floatval', explode( ',', $coords ) );
+
 		$types = wp_get_post_terms( $location->ID, 'artwork_type', array( 'fields' => 'all' ) );
 		$first_type = $types[0] ?? null;
+
+		$collections = wp_get_post_terms( $location->ID, 'artwork_collection', array( 'fields' => 'slugs' ) );
+
 		$color = '#4a7789';
 		$icon_url = null;
 
@@ -70,11 +74,25 @@ foreach ( $locations as $location ) {
 			'lat'     => $lat,
 			'lng'     => $lng,
 			'types'   => wp_list_pluck( $types, 'slug' ),
+			'collections'=> $collections,
 			'color'   => $color,
 			'icon'    => $icon_url,
 			'thumb'   => $thumb,
 			'url'     => get_permalink( $location ),
 		);
+
+		$collection_terms = get_terms(array(
+			'taxonomy'   => 'artwork_collection',
+			'hide_empty' => true,
+		));
+		$collection_map = array();
+		foreach ( $collection_terms as $term ) {
+			$collection_map[] = array(
+				'id'   => $term->term_id,
+				'slug' => $term->slug,
+				'name' => $term->name,
+			);
+		}
 
 	}
 }
@@ -152,6 +170,9 @@ foreach ( $locations as $location ) {
 <div id="pam-filter">
 	<strong>Filter by Type</strong><br>
 	<div id="pam-filter-options"></div>
+
+	<strong style="margin-top:1em;display:block;">Filter by Collection</strong><br>
+	<div id="pam-filter-collections"></div>
 </div>
 
 <div id="pam-map"></div>
@@ -159,6 +180,7 @@ foreach ( $locations as $location ) {
 <script>
 const pamLocations = <?php echo wp_json_encode( $location_data ); ?>;
 const pamTypes = <?php echo wp_json_encode( $term_map ); ?>;
+const pamCollections = <?php echo wp_json_encode( $collection_map ); ?>;
 
 document.addEventListener('DOMContentLoaded', function () {
 	mapboxgl.accessToken = '<?php echo esc_js( $mapbox_key ); ?>';
@@ -229,16 +251,21 @@ document.addEventListener('DOMContentLoaded', function () {
 			.map(cb => cb.value);
 	}
 
-	function filterLocations() {
-		const selected = getSelectedTypes();
-		if (selected.length === 0) {
-			renderMarkers(pamLocations);
-			return;
-		}
+	function getSelectedCollections() {
+		return Array.from(document.querySelectorAll('.collection-filter:checked'))
+			.map(cb => cb.value);
+	}
 
-		const filtered = pamLocations.filter(loc =>
-			loc.types.some(type => selected.includes(type))
-		);
+	function filterLocations() {
+		const selectedTypes = getSelectedTypes();
+		const selectedCollections = getSelectedCollections();
+
+		const filtered = pamLocations.filter(loc => {
+			const matchesType = selectedTypes.length === 0 || loc.types.some(type => selectedTypes.includes(type));
+			const matchesCollection = selectedCollections.length === 0 || loc.collections.some(col => selectedCollections.includes(col));
+			return matchesType && matchesCollection;
+		});
+
 		renderMarkers(filtered);
 	}
 
@@ -257,6 +284,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		wrapper.appendChild(label);
 		document.getElementById('pam-filter-options').appendChild(wrapper);
+	});
+
+	pamCollections.forEach(term => {
+		const wrapper = document.createElement('div');
+
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.value = term.slug;
+		checkbox.classList.add('collection-filter');
+		checkbox.addEventListener('change', filterLocations);
+
+		const label = document.createElement('label');
+		label.appendChild(checkbox);
+		label.append(` ${term.name}`);
+
+		wrapper.appendChild(label);
+		document.getElementById('pam-filter-collections').appendChild(wrapper);
 	});
 
 	// Initial render
