@@ -15,6 +15,7 @@
 // Get the Mapbox API key from the settings
 
 $mapbox_key = get_option( 'pam_mapbox_api_key' );
+$logo_url = esc_url( get_option( 'pam_site_logo' ) );
 
 // Pin location data
 $locations = get_posts(array(
@@ -99,80 +100,33 @@ foreach ( $locations as $location ) {
 
 ?>
 
-<style>
-	html, body, #pam-map {
-		margin: 0;
-		padding: 0;
-		height: 100vh;
-		width: 100%;
-		position: absolute;
-		top: 0;
-		left: 0;
-	}
-	#pam-map {
-		position: relative;
-		z-index: 10;
-	}
-	#pam-filter {
-		position: absolute;
-		bottom: 1rem;
-		left: 1rem;
-		background: white;
-		padding: 1rem;
-		z-index: 999;
-		border-radius: 0.5rem;
-		box-shadow: 0 0 10px rgba(0,0,0,0.2);
-		font-family: sans-serif;
-		max-height: 60vh;
-		overflow-y: auto;
-	}
-	.pam-marker-wrapper {
-		width: 30px;
-		height: 30px;
-		transform: translate(-50%, -100%);
-	}
-	.pam-marker-content {
-		width: 100%;
-		height: 100%;
-		background-size: cover;
-		background-position: center;
-		border-radius: 50%;
-		box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-		border: 2px solid white;
-		transition: transform 0.2s ease;
-	}
-	.pam-marker-content:hover {
-		transform: scale(5);
-		cursor: pointer;
-	}
-	.mapboxgl-popup-content {
-		padding:0;
-		width: 220px;
-		height: auto;
-		padding:5px;
-	}
-	.mapboxgl-popup-content img {
-		width: 100%;
-		height: auto;
-		display: block;
-	}
-	.mapboxgl-popup-content p {
-		margin: 0;
-		text-align: center;
-		font-size:18px;
-		text-align:left;
-	}
-	.mapboxgl-popup-content p small {
-		font-size:14px;
-	}
-</style>
-
+<!-- Filter Options -->
 <div id="pam-filter">
 	<strong>Filter by Type</strong><br>
-	<div id="pam-filter-options"></div>
+	<div id="pam-filter-options-desktop"></div>
+	<strong style="margin-top:1em;display:block;">Filter by Collection</strong>
+	<div id="pam-filter-collections-desktop"></div>
+</div>
 
-	<strong style="margin-top:1em;display:block;">Filter by Collection</strong><br>
-	<div id="pam-filter-collections"></div>
+<!-- Filter Toggle Button (only visible on mobile) -->
+<button id="pam-filter-toggle" aria-controls="pam-filter-drawer" aria-expanded="false">
+	☰ Filter
+</button>
+
+<!-- Site Logo -->
+<?php if ( $logo_url ) : ?>
+	<a href="<?php echo esc_url( home_url() ); ?>" id="pam-site-logo">
+		<img src="<?php echo $logo_url; ?>" alt="Return to Site" />
+	</a>
+<?php endif; ?>
+
+<!-- Slide-In Drawer for Mobile -->
+<div id="pam-filter-drawer">
+	<strong>Filter by Type</strong><br>
+	<div id="pam-filter-options-mobile"></div>
+	<strong style="margin-top:1em;display:block;">Filter by Collection</strong>
+	<div id="pam-filter-collections-mobile"></div>
+	<button id="pam-filter-close">Close</button>
 </div>
 
 <div id="pam-map"></div>
@@ -181,6 +135,24 @@ foreach ( $locations as $location ) {
 const pamLocations = <?php echo wp_json_encode( $location_data ); ?>;
 const pamTypes = <?php echo wp_json_encode( $term_map ); ?>;
 const pamCollections = <?php echo wp_json_encode( $collection_map ); ?>;
+
+document.addEventListener('DOMContentLoaded', function () {
+	const toggleBtn = document.getElementById('pam-filter-toggle');
+	const drawer = document.getElementById('pam-filter-drawer');
+	const closeBtn = document.getElementById('pam-filter-close');
+
+	if (toggleBtn && drawer && closeBtn) {
+		toggleBtn.addEventListener('click', () => {
+			drawer.classList.add('is-visible');
+			toggleBtn.setAttribute('aria-expanded', 'true');
+		});
+
+		closeBtn.addEventListener('click', () => {
+			drawer.classList.remove('is-visible');
+			toggleBtn.setAttribute('aria-expanded', 'false');
+		});
+	}
+});
 
 document.addEventListener('DOMContentLoaded', function () {
 	mapboxgl.accessToken = '<?php echo esc_js( $mapbox_key ); ?>';
@@ -247,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function getSelectedTypes() {
-		return Array.from(document.querySelectorAll('#pam-filter-options input:checked'))
+		return Array.from(document.querySelectorAll('.type-filter:checked'))
 			.map(cb => cb.value);
 	}
 
@@ -269,38 +241,50 @@ document.addEventListener('DOMContentLoaded', function () {
 		renderMarkers(filtered);
 	}
 
-	// Render filter checkboxes
-	pamTypes.forEach(term => {
+	function createCheckbox(term, type = 'type') {
 		const wrapper = document.createElement('div');
 
 		const checkbox = document.createElement('input');
 		checkbox.type = 'checkbox';
 		checkbox.value = term.slug;
-		checkbox.addEventListener('change', filterLocations);
+		checkbox.setAttribute('data-slug', term.slug); // used for syncing
+
+		if (type === 'collection') {
+			checkbox.classList.add('collection-filter');
+		} else {
+			checkbox.classList.add('type-filter');
+		}
+
+		// Add change listener with sync
+		checkbox.addEventListener('change', function () {
+			const matching = document.querySelectorAll(`input[data-slug="${term.slug}"]`);
+			matching.forEach(cb => {
+				if (cb !== this) cb.checked = this.checked;
+			});
+			filterLocations(); // update map
+		});
 
 		const label = document.createElement('label');
 		label.appendChild(checkbox);
 		label.append(` ${term.name}`);
 
 		wrapper.appendChild(label);
-		document.getElementById('pam-filter-options').appendChild(wrapper);
+		return wrapper;
+	}
+
+
+	pamTypes.forEach(term => {
+		document.getElementById('pam-filter-options-desktop')
+			.appendChild(createCheckbox(term, 'type'));
+		document.getElementById('pam-filter-options-mobile')
+			.appendChild(createCheckbox(term, 'type'));
 	});
 
 	pamCollections.forEach(term => {
-		const wrapper = document.createElement('div');
-
-		const checkbox = document.createElement('input');
-		checkbox.type = 'checkbox';
-		checkbox.value = term.slug;
-		checkbox.classList.add('collection-filter');
-		checkbox.addEventListener('change', filterLocations);
-
-		const label = document.createElement('label');
-		label.appendChild(checkbox);
-		label.append(` ${term.name}`);
-
-		wrapper.appendChild(label);
-		document.getElementById('pam-filter-collections').appendChild(wrapper);
+		document.getElementById('pam-filter-collections-desktop')
+			.appendChild(createCheckbox(term, 'collection'));
+		document.getElementById('pam-filter-collections-mobile')
+			.appendChild(createCheckbox(term, 'collection'));
 	});
 
 	// Initial render

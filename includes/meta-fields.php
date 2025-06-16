@@ -21,9 +21,14 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 		wp_enqueue_style( 'mapbox-gl', 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' );
 
         wp_enqueue_script( 'pam-gallery-js', plugin_dir_url(__FILE__).'../js/pam-gallery.js', [ 'jquery' ], '1.0', true );
-        wp_enqueue_style(  'pam-gallery-css', plugin_dir_url(__FILE__).'../css/pam-gallery.css' );
+        wp_enqueue_style( 'pam-gallery-css-admin', plugin_dir_url(__FILE__).'../css/pam-gallery-admin.css' );
 	}
 });
+
+add_action( 'wp_enqueue_scripts', function() {
+	wp_enqueue_style( 'pam-gallery-css', plugin_dir_url(__FILE__) . '../css/pam-gallery.css', [], '1.0' );
+});
+
 
 
 /**

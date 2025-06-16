@@ -14,6 +14,21 @@ function pam_add_settings_page() {
 add_action( 'admin_init', 'pam_register_settings' );
 
 function pam_register_settings() {
+
+	register_setting( 'pam_settings_group', 'pam_site_logo', array(
+		'type'              => 'string',
+		'sanitize_callback' => 'esc_url_raw',
+		'default'           => '',
+	) );
+
+	add_settings_field(
+		'pam_site_logo',
+		'Site Logo',
+		'pam_site_logo_field',
+		'public-art-map',
+		'pam_main_settings'
+	);
+
 	register_setting( 'pam_settings_group', 'pam_map_page', array(
 		'type' => 'integer',
 		'sanitize_callback' => 'absint',
@@ -220,4 +235,50 @@ function pam_run_cron_coordinate_fill() {
 	delete_transient( 'pam_cron_is_running' ); // clear flag when done
 
 }
+
+function pam_site_logo_field() {
+	$logo_url = esc_url( get_option( 'pam_site_logo', '' ) );
+	?>
+	<div style="max-width: 300px;">
+		<img id="pam-site-logo-preview" src="<?php echo $logo_url; ?>" style="max-width:100%;<?php echo $logo_url ? '' : 'display:none;'; ?>" />
+	</div>
+	<input type="hidden" name="pam_site_logo" id="pam-site-logo" value="<?php echo $logo_url; ?>" />
+	<p>
+		<button type="button" class="button" id="pam-upload-logo">Select Logo</button>
+		<button type="button" class="button" id="pam-remove-logo">Remove</button>
+	</p>
+	<script>
+		jQuery(document).ready(function($) {
+			const frame = wp.media({
+				title: "Select or Upload Logo",
+				button: { text: "Use this logo" },
+				multiple: false
+			});
+
+			$('#pam-upload-logo').on('click', function(e) {
+				e.preventDefault();
+				frame.open();
+				frame.on('select', function() {
+					const attachment = frame.state().get('selection').first().toJSON();
+					$('#pam-site-logo').val(attachment.url);
+					$('#pam-site-logo-preview').attr('src', attachment.url).show();
+				});
+			});
+
+			$('#pam-remove-logo').on('click', function(e) {
+				e.preventDefault();
+				$('#pam-site-logo').val('');
+				$('#pam-site-logo-preview').hide();
+			});
+		});
+	</script>
+	<?php
+}
+
+add_action( 'admin_enqueue_scripts', function( $hook ) {
+	if ( $hook === 'settings_page_public-art-map' ) {
+		wp_enqueue_media();
+	}
+});
+
 

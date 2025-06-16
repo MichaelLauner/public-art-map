@@ -1,25 +1,154 @@
-#pam-gallery-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;       /* allow wrapping to new lines */
-  gap: 10px;             /* space between items */
+html, body, #pam-map {
+	margin: 0;
+	padding: 0;
+	height: 100vh;
+	width: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
 }
 
-#pam-gallery-list li {
-  width: 100px;          /* or whatever thumbnail width you want */
-  position: relative;
+#pam-map {
+	position: relative;
+	z-index: 10;
+}
+#pam-filter {
+	position: absolute;
+	bottom: 1rem;
+	left: 1rem;
+	background: white;
+	padding: 1rem;
+	z-index: 999;
+	border-radius: 0.5rem;
+	box-shadow: 0 0 10px rgba(0,0,0,0.2);
+	font-family: sans-serif;
+	max-height: 60vh;
+	overflow-y: auto;
 }
 
-#pam-gallery-list li img {
-  display: block;
-  max-width: 100%;
-  height: auto;
+.pam-marker-wrapper {
+	width: 30px;
+	height: 30px;
+	transform: translate(-50%, -100%);
+}
+.pam-marker-content {
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	border-radius: 50%;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+	border: 2px solid white;
+	transition: transform 0.2s ease;
+}
+.pam-marker-content:hover {
+	transform: scale(5);
+	cursor: pointer;
+}
+.mapboxgl-popup-content {
+	padding:0;
+	width: 220px;
+	height: auto;
+	padding:5px;
+}
+.mapboxgl-popup-content img {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+.mapboxgl-popup-content p {
+	margin: 0;
+	text-align: center;
+	font-size:18px;
+	text-align:left;
+}
+.mapboxgl-popup-content p small {
+	font-size:14px;
 }
 
-#pam-gallery-list li .remove-image {
-  position: absolute;
-  top: 2px;
-  right: 2px;
+#pam-site-logo {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	z-index: 999;
+	display: block;
+	background: white;
+	padding: 0.5rem;
+	border-radius: 0.5rem;
+	box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+#pam-site-logo img {
+	max-height: 50px;
+	width: auto;
+	display: block;
+}
+
+/* Default filter styles — shown on desktop */
+#pam-filter {
+	position: absolute;
+	bottom: 1rem;
+	left: 1rem;
+	background: white;
+	padding: 1rem;
+	z-index: 999;
+	border-radius: 0.5rem;
+	box-shadow: 0 0 10px rgba(0,0,0,0.2);
+	font-family: sans-serif;
+	max-height: 60vh;
+	overflow-y: auto;
+}
+
+/* Hide the mobile drawer and toggle button on desktop */
+#pam-filter-drawer,
+#pam-filter-toggle {
+	display: none;
+}
+
+@media screen and (max-width: 640px) {
+	/* Hide desktop filters on small screens */
+	#pam-filter {
+		display: none;
+	}
+
+	#pam-filter-toggle {
+		display: block;
+		position: absolute;
+		bottom: 1rem;
+		left: 1rem;
+		z-index: 1000;
+		background: white;
+		border: 1px solid #ccc;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		box-shadow: 0 0 5px rgba(0,0,0,0.2);
+	}
+
+	#pam-filter-drawer {
+		display: block;
+		position: fixed;
+		top: 0;
+		right: -300px;
+		width: 280px;
+		height: 100%;
+		background: white;
+		box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+		padding: 1rem;
+		z-index: 1100;
+		transition: right 0.3s ease-in-out;
+		overflow-y: auto;
+	}
+
+	#pam-filter-drawer.is-visible {
+		right: 0;
+	}
+
+	#pam-filter-close {
+		margin-top: 1rem;
+		background: #eee;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		cursor: pointer;
+	}
 }
