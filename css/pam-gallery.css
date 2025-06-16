@@ -1,3 +1,6 @@
+/* ------------------------------
+   Base Layout
+------------------------------ */
 html, body, #pam-map {
 	margin: 0;
 	padding: 0;
@@ -11,71 +14,36 @@ html, body, #pam-map {
 #pam-map {
 	position: relative;
 	z-index: 10;
-}
-#pam-filter {
-	position: absolute;
-	bottom: 1rem;
-	left: 1rem;
-	background: white;
-	padding: 1rem;
-	z-index: 999;
-	border-radius: 0.5rem;
-	box-shadow: 0 0 10px rgba(0,0,0,0.2);
 	font-family: sans-serif;
-	max-height: 60vh;
-	overflow-y: auto;
 }
 
-.pam-marker-wrapper {
-	width: 30px;
-	height: 30px;
-	transform: translate(-50%, -100%);
-}
-.pam-marker-content {
+/* ------------------------------
+   UI Bar: Logo, Toggle, Chips
+------------------------------ */
+#pam-ui {
+	position: absolute;
+	top: 0;
+	left: 0;
 	width: 100%;
-	height: 100%;
-	background-size: cover;
-	background-position: center;
-	border-radius: 50%;
-	box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-	border: 2px solid white;
-	transition: transform 0.2s ease;
+	z-index: 1000;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.5rem;
+	gap: 1rem;
+	pointer-events: none;
 }
-.pam-marker-content:hover {
-	transform: scale(5);
-	cursor: pointer;
-}
-.mapboxgl-popup-content {
-	padding:0;
-	width: 220px;
-	height: auto;
-	padding:5px;
-}
-.mapboxgl-popup-content img {
-	width: 100%;
-	height: auto;
-	display: block;
-}
-.mapboxgl-popup-content p {
-	margin: 0;
-	text-align: center;
-	font-size:18px;
-	text-align:left;
-}
-.mapboxgl-popup-content p small {
-	font-size:14px;
+
+#pam-ui > * {
+	pointer-events: auto;
 }
 
 #pam-site-logo {
-	position: absolute;
-	top: 1rem;
-	left: 1rem;
-	z-index: 999;
-	display: block;
 	background: white;
 	padding: 0.5rem;
 	border-radius: 0.5rem;
-	box-shadow: 0 0 10px rgba(0,0,0,0.2);
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 #pam-site-logo img {
@@ -84,7 +52,53 @@ html, body, #pam-map {
 	display: block;
 }
 
-/* Default filter styles — shown on desktop */
+#pam-filter-toggle {
+	display: none;
+	background: white;
+	border: 1px solid #ccc;
+	padding: 0.5rem 1rem;
+	border-radius: 4px;
+	box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* ------------------------------
+   Active Filter Chips
+------------------------------ */
+.pam-active-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5em;
+	flex: 1 1 auto;
+	justify-content: flex-end;
+	align-items: center;
+	margin: 1em 0;
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	padding: 0.5em;
+}
+
+.pam-filter-chip {
+	background: #EDD274;
+	border-radius: 20px;
+	padding: 0.3em 0.75em;
+	display: flex;
+	align-items: center;
+	font-size: 0.875rem;
+}
+
+.pam-filter-chip button {
+	background: none;
+	border: none;
+	font-size: 1rem;
+	margin-left: 0.5em;
+	cursor: pointer;
+}
+
+/* ------------------------------
+   Desktop Filter Panel
+------------------------------ */
 #pam-filter {
 	position: absolute;
 	bottom: 1rem;
@@ -93,35 +107,98 @@ html, body, #pam-map {
 	padding: 1rem;
 	z-index: 999;
 	border-radius: 0.5rem;
-	box-shadow: 0 0 10px rgba(0,0,0,0.2);
-	font-family: sans-serif;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 	max-height: 60vh;
 	overflow-y: auto;
 }
 
-/* Hide the mobile drawer and toggle button on desktop */
-#pam-filter-drawer,
-#pam-filter-toggle {
+/* ------------------------------
+   Mobile Filter Drawer
+------------------------------ */
+#pam-filter-drawer {
 	display: none;
 }
 
+#pam-filter-close {
+	margin-top: 1rem;
+	background: #eee;
+	border: none;
+	padding: 0.5rem 1rem;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+/* ------------------------------
+   Marker Styles
+------------------------------ */
+.pam-marker-wrapper {
+	width: 30px;
+	height: 30px;
+	transform: translate(-50%, -100%);
+}
+
+.pam-marker-content {
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	border-radius: 50%;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+	border: 2px solid white;
+	transition: transform 0.2s ease;
+}
+
+.pam-marker-content:hover {
+	transform: scale(5);
+	cursor: pointer;
+}
+
+/* ------------------------------
+   Mapbox Popup Styles
+------------------------------ */
+.mapboxgl-popup-content {
+	width: 220px;
+	padding: 5px;
+}
+
+.mapboxgl-popup-content img {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+.mapboxgl-popup-content p {
+	margin: 0;
+	text-align: left;
+	font-size: 18px;
+}
+
+.mapboxgl-popup-content p small {
+	font-size: 14px;
+}
+
+/* ------------------------------
+   Responsive Styles
+------------------------------ */
 @media screen and (max-width: 640px) {
-	/* Hide desktop filters on small screens */
+	#pam-ui {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
+	}
+
+	.pam-active-filters {
+		justify-content: flex-start;
+	}
+
 	#pam-filter {
 		display: none;
 	}
 
 	#pam-filter-toggle {
 		display: block;
-		position: absolute;
-		bottom: 1rem;
-		left: 1rem;
+		position: relative;
 		z-index: 1000;
-		background: white;
-		border: 1px solid #ccc;
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
-		box-shadow: 0 0 5px rgba(0,0,0,0.2);
 	}
 
 	#pam-filter-drawer {
@@ -141,14 +218,5 @@ html, body, #pam-map {
 
 	#pam-filter-drawer.is-visible {
 		right: 0;
-	}
-
-	#pam-filter-close {
-		margin-top: 1rem;
-		background: #eee;
-		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
-		cursor: pointer;
 	}
 }

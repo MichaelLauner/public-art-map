@@ -100,6 +100,20 @@ foreach ( $locations as $location ) {
 
 ?>
 
+<div id="pam-ui">
+	<?php if ( $logo_url ) : ?>
+		<a href="<?php echo esc_url( home_url() ); ?>" id="pam-site-logo">
+			<img src="<?php echo $logo_url; ?>" alt="Return to Site" />
+		</a>
+	<?php endif; ?>
+
+	<button id="pam-filter-toggle" aria-controls="pam-filter-drawer" aria-expanded="false">
+		☰ Filter
+	</button>
+
+	<div id="pam-active-filters" class="pam-active-filters"></div>
+</div>
+
 <!-- Filter Options -->
 <div id="pam-filter">
 	<strong>Filter by Type</strong><br>
@@ -107,18 +121,6 @@ foreach ( $locations as $location ) {
 	<strong style="margin-top:1em;display:block;">Filter by Collection</strong>
 	<div id="pam-filter-collections-desktop"></div>
 </div>
-
-<!-- Filter Toggle Button (only visible on mobile) -->
-<button id="pam-filter-toggle" aria-controls="pam-filter-drawer" aria-expanded="false">
-	☰ Filter
-</button>
-
-<!-- Site Logo -->
-<?php if ( $logo_url ) : ?>
-	<a href="<?php echo esc_url( home_url() ); ?>" id="pam-site-logo">
-		<img src="<?php echo $logo_url; ?>" alt="Return to Site" />
-	</a>
-<?php endif; ?>
 
 <!-- Slide-In Drawer for Mobile -->
 <div id="pam-filter-drawer">
@@ -145,12 +147,28 @@ document.addEventListener('DOMContentLoaded', function () {
 		toggleBtn.addEventListener('click', () => {
 			drawer.classList.add('is-visible');
 			toggleBtn.setAttribute('aria-expanded', 'true');
+			// Add listener for click outside
+			document.addEventListener('click', handleOutsideClick);
 		});
 
 		closeBtn.addEventListener('click', () => {
+			closeDrawer();
+		});
+
+		function closeDrawer() {
 			drawer.classList.remove('is-visible');
 			toggleBtn.setAttribute('aria-expanded', 'false');
-		});
+			document.removeEventListener('click', handleOutsideClick);
+		}
+
+		function handleOutsideClick(e) {
+			if (
+				!drawer.contains(e.target) &&
+				!toggleBtn.contains(e.target)
+			) {
+				closeDrawer();
+			}
+		}
 	}
 });
 
@@ -239,6 +257,43 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 
 		renderMarkers(filtered);
+		updateActiveFiltersDisplay();
+	}
+
+	function updateActiveFiltersDisplay() {
+		const container = document.getElementById('pam-active-filters');
+		container.innerHTML = ''; // Clear old
+
+		const activeCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+		const seenSlugs = new Set();
+
+		activeCheckboxes.forEach(checkbox => {
+			const slug = checkbox.getAttribute('data-slug');
+
+			if (seenSlugs.has(slug)) return; // Already added this one
+			seenSlugs.add(slug);
+
+			const labelText = checkbox.parentNode.textContent.trim();
+
+			const chip = document.createElement('span');
+			chip.className = 'pam-filter-chip';
+			chip.textContent = labelText;
+
+			const close = document.createElement('button');
+			close.textContent = '×';
+			close.setAttribute('aria-label', `Remove ${labelText}`);
+			close.addEventListener('click', () => {
+				// Uncheck all checkboxes with matching data-slug
+				document.querySelectorAll(`input[data-slug="${slug}"]`).forEach(cb => {
+					cb.checked = false;
+				});
+				filterLocations();
+				updateActiveFiltersDisplay();
+			});
+
+			chip.appendChild(close);
+			container.appendChild(chip);
+		});
 	}
 
 	function createCheckbox(term, type = 'type') {
@@ -271,7 +326,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		wrapper.appendChild(label);
 		return wrapper;
 	}
-
 
 	pamTypes.forEach(term => {
 		document.getElementById('pam-filter-options-desktop')
