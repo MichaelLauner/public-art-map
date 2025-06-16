@@ -25,10 +25,25 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 	}
 });
 
+/**
+ * Enqueue Gallery CSS for Frontend
+ */
 add_action( 'wp_enqueue_scripts', function() {
 	wp_enqueue_style( 'pam-gallery-css', plugin_dir_url(__FILE__) . '../css/pam-gallery.css', [], '1.0' );
 });
 
+/**
+ * Enqueue JS for Gallery Modal
+ */
+add_action( 'wp_enqueue_scripts', function() {
+    if ( is_singular( 'map_location' ) ) {
+        wp_enqueue_script( 'pam-gallery-modal', plugin_dir_url(__FILE__) . '../js/pam-gallery-modal.js', [ 'jquery' ], '1.0', true );
+        wp_localize_script( 'pam-gallery-modal', 'pamGallery', [
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'pam_gallery_nonce' ),
+        ] );
+    }
+});
 
 
 /**

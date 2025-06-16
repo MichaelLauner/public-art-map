@@ -10,7 +10,7 @@ function pam_add_gallery_modal_to_content( $content ) {
 	$featured_image_id = get_post_thumbnail_id( get_the_ID() );
 
 	// Gallery Image IDs
-	$gallery_ids = get_post_meta( get_the_ID(), 'pam_gallery_images', true ) ?: array();
+	$gallery_ids = get_post_meta( get_the_ID(), 'pam_images', true ) ?: array();
 
 	// Ensure the featured image is included in the gallery
 	if ( $featured_image_id && ! in_array( $featured_image_id, $gallery_ids ) ) {
@@ -41,6 +41,14 @@ function pam_add_gallery_modal_to_content( $content ) {
 		<span class="pam-gallery-close">&times;</span>
 		<img class="pam-gallery-full" src="" alt="">
 	</div>
+
+	<div class="pam-gallery-modal" id="pamGalleryModal">
+		<button class="pam-close" id="pamModalClose">&times;</button>
+		<button class="pam-nav prev" id="pamModalPrev">&#8249;</button>
+		<img id="pamModalImage" src="" alt="">
+		<button class="pam-nav next" id="pamModalNext">&#8250;</button>
+	</div>
+
 	<?php
 	$gallery_html = ob_get_clean();
 	return $content . $gallery_html;

@@ -227,32 +227,41 @@ html, body, #pam-map {
    PAM Gallery Styles
 ------------------------------ */
 .pam-gallery {
-	display: flex;
-	flex-wrap: wrap;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
 	gap: 0.5rem;
 	margin: 1rem 0;
 }
+
 .pam-gallery-thumb {
-	max-width: 150px;
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
 	cursor: pointer;
 	border-radius: 4px;
 	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 	transition: transform 0.2s ease;
 }
+
 .pam-gallery-thumb:hover {
 	transform: scale(1.05);
 }
+
+@media screen and (min-width: 640px) {
+	.pam-gallery-thumb {
+		width: 150px;
+	}
+}
+
 .pam-gallery-modal {
 	display: none;
 	position: fixed;
-	z-index: 10000;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0,0,0,0.8);
-	justify-content: center;
+	top: 0; left: 0;
+	width: 100%; height: 100%;
+	background-color: rgba(0, 0, 0, 0.8);
+	z-index: 9999;
 	align-items: center;
+	justify-content: center;
 }
 .pam-gallery-modal img {
 	max-width: 90%;
@@ -264,5 +273,48 @@ html, body, #pam-map {
 	right: 2rem;
 	color: #fff;
 	font-size: 2rem;
+	cursor: pointer;
+}
+
+
+/* Active state */
+.pam-gallery-modal.is-visible {
+	display: flex;
+}
+
+/* Modal Image */
+.pam-gallery-modal img {
+	max-width: 90%;
+	max-height: 90%;
+	border-radius: 8px;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Navigation Buttons */
+.pam-gallery-modal .pam-nav {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 2rem;
+	color: white;
+	background: rgba(0, 0, 0, 0.4);
+	border: none;
+	cursor: pointer;
+	padding: 0.5rem 1rem;
+	z-index: 10000;
+}
+
+.pam-gallery-modal .pam-nav.prev { left: 2%; }
+.pam-gallery-modal .pam-nav.next { right: 2%; }
+
+/* Close Button */
+.pam-gallery-modal .pam-close {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	font-size: 2rem;
+	color: white;
+	background: none;
+	border: none;
 	cursor: pointer;
 }
