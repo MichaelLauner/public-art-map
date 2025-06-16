@@ -74,8 +74,9 @@ html, body, #pam-map {
 	margin: 1em 0;
 	position: fixed;
 	bottom: 0;
-	left: 0;
+	right: 0;
 	width: 100%;
+	max-width: calc(100% - 300px);
 	padding: 0.5em;
 }
 
@@ -108,7 +109,7 @@ html, body, #pam-map {
 	z-index: 999;
 	border-radius: 0.5rem;
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-	max-height: 60vh;
+	max-width: 300px;
 	overflow-y: auto;
 }
 
@@ -188,6 +189,7 @@ html, body, #pam-map {
 	}
 
 	.pam-active-filters {
+		max-width:100%;
 		justify-content: flex-start;
 	}
 
@@ -219,4 +221,48 @@ html, body, #pam-map {
 	#pam-filter-drawer.is-visible {
 		right: 0;
 	}
+}
+
+/* ------------------------------
+   PAM Gallery Styles
+------------------------------ */
+.pam-gallery {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 1rem 0;
+}
+.pam-gallery-thumb {
+	max-width: 150px;
+	cursor: pointer;
+	border-radius: 4px;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+	transition: transform 0.2s ease;
+}
+.pam-gallery-thumb:hover {
+	transform: scale(1.05);
+}
+.pam-gallery-modal {
+	display: none;
+	position: fixed;
+	z-index: 10000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0,0,0,0.8);
+	justify-content: center;
+	align-items: center;
+}
+.pam-gallery-modal img {
+	max-width: 90%;
+	max-height: 90%;
+}
+.pam-gallery-close {
+	position: absolute;
+	top: 1rem;
+	right: 2rem;
+	color: #fff;
+	font-size: 2rem;
+	cursor: pointer;
 }
