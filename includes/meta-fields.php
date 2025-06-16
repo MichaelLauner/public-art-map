@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
+
 /**
  * Enqueue Mapbox GL JS and CSS
  */
@@ -25,12 +26,14 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 	}
 });
 
+
 /**
  * Enqueue Gallery CSS for Frontend
  */
 add_action( 'wp_enqueue_scripts', function() {
 	wp_enqueue_style( 'pam-gallery-css', plugin_dir_url(__FILE__) . '../css/pam-gallery.css', [], '1.0' );
 });
+
 
 /**
  * Enqueue JS for Gallery Modal

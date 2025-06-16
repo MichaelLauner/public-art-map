@@ -318,3 +318,14 @@ html, body, #pam-map {
 	border: none;
 	cursor: pointer;
 }
+
+.pam-project-meta {
+	margin: 2em 0;
+	padding: 1em;
+	background: #f8f8f8;
+	border-radius: 6px;
+	font-family: sans-serif;
+}
+.pam-project-meta p {
+	margin: 0.5em 0;
+}
