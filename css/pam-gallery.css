@@ -30,8 +30,8 @@ html, body, #pam-map {
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
-	padding: 0.5rem;
-	gap: 1rem;
+	padding: 10px;
+	gap: 10px;
 	pointer-events: none;
 }
 
@@ -41,8 +41,8 @@ html, body, #pam-map {
 
 #pam-site-logo {
 	background: white;
-	padding: 0.5rem;
-	border-radius: 0.5rem;
+	padding: 10px;
+	border-radius: 5px;
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -56,7 +56,7 @@ html, body, #pam-map {
 	display: none;
 	background: white;
 	border: 1px solid #ccc;
-	padding: 0.5rem 1rem;
+	padding: 5px 10px;
 	border-radius: 4px;
 	box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
@@ -83,17 +83,18 @@ html, body, #pam-map {
 .pam-filter-chip {
 	background: #EDD274;
 	border-radius: 20px;
-	padding: 0.3em 0.75em;
+	padding: 5px 12px;
 	display: flex;
 	align-items: center;
-	font-size: 0.875rem;
+	font-size: 12px;
+	font-weight: bold;
 }
 
 .pam-filter-chip button {
 	background: none;
 	border: none;
-	font-size: 1rem;
-	margin-left: 0.5em;
+	font-size: 16px;
+	margin-left: 5px;
 	cursor: pointer;
 }
 
@@ -102,12 +103,12 @@ html, body, #pam-map {
 ------------------------------ */
 #pam-filter {
 	position: absolute;
-	bottom: 1rem;
-	left: 1rem;
+	bottom: 10px;
+	left: 10px;
 	background: white;
-	padding: 1rem;
+	padding: 10px;
 	z-index: 999;
-	border-radius: 0.5rem;
+	border-radius: 5px;
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 	max-width: 300px;
 	overflow-y: auto;
@@ -121,10 +122,10 @@ html, body, #pam-map {
 }
 
 #pam-filter-close {
-	margin-top: 1rem;
+	margin-top: 10px;
 	background: #eee;
 	border: none;
-	padding: 0.5rem 1rem;
+	padding: 0.50px 10px;
 	border-radius: 4px;
 	cursor: pointer;
 }
@@ -185,7 +186,7 @@ html, body, #pam-map {
 	#pam-ui {
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 0.5rem;
+		gap: 0.50px;
 	}
 
 	.pam-active-filters {
@@ -201,6 +202,7 @@ html, body, #pam-map {
 		display: block;
 		position: relative;
 		z-index: 1000;
+		margin-top:10px;
 	}
 
 	#pam-filter-drawer {
@@ -212,7 +214,7 @@ html, body, #pam-map {
 		height: 100%;
 		background: white;
 		box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-		padding: 1rem;
+		padding: 10px;
 		z-index: 1100;
 		transition: right 0.3s ease-in-out;
 		overflow-y: auto;
@@ -229,8 +231,8 @@ html, body, #pam-map {
 .pam-gallery {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-	gap: 0.5rem;
-	margin: 1rem 0;
+	gap: 0.50px;
+	margin: 10px 0;
 }
 
 .pam-gallery-thumb {
@@ -269,10 +271,10 @@ html, body, #pam-map {
 }
 .pam-gallery-close {
 	position: absolute;
-	top: 1rem;
-	right: 2rem;
+	top: 10px;
+	right: 20px;
 	color: #fff;
-	font-size: 2rem;
+	font-size: 20px;
 	cursor: pointer;
 }
 
@@ -295,12 +297,12 @@ html, body, #pam-map {
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
-	font-size: 2rem;
+	font-size: 20px;
 	color: white;
 	background: rgba(0, 0, 0, 0.4);
 	border: none;
 	cursor: pointer;
-	padding: 0.5rem 1rem;
+	padding: 0.50px 10px;
 	z-index: 10000;
 }
 
@@ -310,9 +312,9 @@ html, body, #pam-map {
 /* Close Button */
 .pam-gallery-modal .pam-close {
 	position: absolute;
-	top: 1rem;
-	right: 1rem;
-	font-size: 2rem;
+	top: 10px;
+	right: 10px;
+	font-size: 20px;
 	color: white;
 	background: none;
 	border: none;
