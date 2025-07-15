@@ -138,20 +138,20 @@ const pamLocations = <?php echo wp_json_encode( $location_data ); ?>;
 const pamTypes = <?php echo wp_json_encode( $term_map ); ?>;
 const pamCollections = <?php echo wp_json_encode( $collection_map ); ?>;
 
+// Global filter init
+function getInitialFilters() {
+	const urlParams = new URLSearchParams(window.location.search);
+	return {
+		types: urlParams.getAll('type'),
+		collections: urlParams.getAll('collection')
+	};
+}
+const initialFilters = getInitialFilters();
+
 document.addEventListener('DOMContentLoaded', function () {
 	const toggleBtn = document.getElementById('pam-filter-toggle');
 	const drawer = document.getElementById('pam-filter-drawer');
 	const closeBtn = document.getElementById('pam-filter-close');
-
-	function getInitialFilters() {
-		const urlParams = new URLSearchParams(window.location.search);
-		return {
-			types: urlParams.getAll('type'),
-			collections: urlParams.getAll('collection')
-		};
-	}
-
-	const initialFilters = getInitialFilters();
 
 	if (toggleBtn && drawer && closeBtn) {
 		toggleBtn.addEventListener('click', () => {
