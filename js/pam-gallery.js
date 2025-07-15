@@ -41,6 +41,7 @@ jQuery(function($){
             $input.val( ordered.join(',') );
         }
     });
+    
 
     // Remove image
     $list.on('click', '.remove-image', function(){
@@ -51,4 +52,5 @@ jQuery(function($){
         $input.val( ids.join(',') );
         $li.remove();
     });
+
 });

@@ -24,3 +24,29 @@ require_once plugin_dir_path(__FILE__) . 'templates/single-project-display.php';
 
 // Tools
 require_once plugin_dir_path(__FILE__) . 'includes/tools.php';
+
+add_action( 'rest_api_init', function() {
+    register_rest_field(
+        'map_location',            // CPT slug
+        'pam_coordinates',         // the new REST field
+        [
+            'get_callback'    => function( $object ) {
+                // Return the stored meta value
+                return get_post_meta( $object['id'], 'pam_coordinates', true );
+            },
+            'update_callback' => function( $value, $object ) {
+                // Allow updating via the REST API if needed
+                update_post_meta(
+                    $object->ID,
+                    'pam_coordinates',
+                    sanitize_text_field( $value )
+                );
+            },
+            'schema'          => [
+                'type'        => 'string',
+                'description' => 'Latitude and longitude as "lat,lng"',
+                'context'     => [ 'view', 'edit' ],
+            ],
+        ]
+    );
+});

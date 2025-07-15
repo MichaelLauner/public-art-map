@@ -143,6 +143,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	const drawer = document.getElementById('pam-filter-drawer');
 	const closeBtn = document.getElementById('pam-filter-close');
 
+	function getInitialFilters() {
+		const urlParams = new URLSearchParams(window.location.search);
+		return {
+			types: urlParams.getAll('type'),
+			collections: urlParams.getAll('collection')
+		};
+	}
+
+	const initialFilters = getInitialFilters();
+
 	if (toggleBtn && drawer && closeBtn) {
 		toggleBtn.addEventListener('click', () => {
 			drawer.classList.add('is-visible');
@@ -258,6 +268,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		renderMarkers(filtered);
 		updateActiveFiltersDisplay();
+
+		const params = new URLSearchParams();
+
+		getSelectedTypes().forEach(type => params.append('type', type));
+		getSelectedCollections().forEach(col => params.append('collection', col));
+
+		const newUrl = `${window.location.pathname}?${params.toString()}`;
+		window.history.replaceState({}, '', newUrl);
 	}
 
 	function updateActiveFiltersDisplay() {
@@ -310,6 +328,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			checkbox.classList.add('type-filter');
 		}
 
+		if ((type === 'type' && initialFilters.types.includes(term.slug)) ||
+			(type === 'collection' && initialFilters.collections.includes(term.slug))) {
+			checkbox.checked = true;
+		}
+
 		// Add change listener with sync
 		checkbox.addEventListener('change', function () {
 			const matching = document.querySelectorAll(`input[data-slug="${term.slug}"]`);
@@ -341,8 +364,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			.appendChild(createCheckbox(term, 'collection'));
 	});
 
-	// Initial render
+	// Initial render	
 	renderMarkers(pamLocations);
+	filterLocations();
 
 	map.on('load', () => {
 		const layers = map.getStyle().layers;
