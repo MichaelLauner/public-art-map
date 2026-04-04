@@ -80,6 +80,43 @@ function pam_register_settings() {
 		'pam_main_settings'
 	);
 
+	register_setting( 'pam_settings_group', 'pam_export_enabled', array(
+		'type'              => 'boolean',
+		'sanitize_callback' => function( $value ) {
+			return (bool) $value;
+		},
+		'default'           => false,
+	) );
+
+	register_setting( 'pam_settings_group', 'pam_export_token', array(
+		'type'              => 'string',
+		'sanitize_callback' => 'sanitize_text_field',
+		'default'           => '',
+	) );
+
+	add_settings_section(
+		'pam_data_sharing_settings',
+		'Data Sharing',
+		'__return_null',
+		'public-art-map'
+	);
+
+	add_settings_field(
+		'pam_export_enabled',
+		'Enable Export Feed',
+		'pam_export_enabled_field',
+		'public-art-map',
+		'pam_data_sharing_settings'
+	);
+
+	add_settings_field(
+		'pam_export_token',
+		'Export Token',
+		'pam_export_token_field',
+		'public-art-map',
+		'pam_data_sharing_settings'
+	);
+
 }
 
 function pam_map_page_dropdown() {
@@ -111,6 +148,36 @@ function pam_mapbox_api_key_input() {
 	$value = esc_attr( get_option( 'pam_mapbox_api_key', '' ) );
 	echo '<input type="text" name="pam_mapbox_api_key" value="' . $value . '" style="width: 100%;" placeholder="pk.XXXXXXX">';
 	echo '<p class="description">Paste your Mapbox public access token (starts with <code>pk.</code>).</p>';
+}
+
+function pam_export_enabled_field() {
+	$enabled    = (bool) get_option( 'pam_export_enabled', false );
+	$token      = trim( (string) get_option( 'pam_export_token', '' ) );
+	$export_url = rest_url( 'public-art-map/v1/export' );
+	?>
+	<label>
+		<input type="checkbox" name="pam_export_enabled" value="1" <?php checked( $enabled ); ?>>
+		Allow another site to fetch map locations, taxonomies, and image URLs from this site.
+	</label>
+	<p class="description">
+		Export URL:
+		<code><?php echo esc_html( $export_url ); ?></code>
+	</p>
+	<?php if ( $token ) : ?>
+		<p class="description">
+			Use <code>?token=YOUR_TOKEN</code> or an <code>X-PAM-Token</code> header when requesting the feed.
+		</p>
+	<?php else : ?>
+		<p class="description">
+			Leave the token blank to make the feed public once enabled, or set a token to limit access.
+		</p>
+	<?php endif;
+}
+
+function pam_export_token_field() {
+	$value = esc_attr( get_option( 'pam_export_token', '' ) );
+	echo '<input type="text" name="pam_export_token" value="' . $value . '" style="width: 100%;" placeholder="Optional shared secret">';
+	echo '<p class="description">Optional. If set, requests must include this token. This is useful when you want a shareable feed without making it fully public.</p>';
 }
 
 /**
@@ -280,5 +347,4 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 		wp_enqueue_media();
 	}
 });
-
 
