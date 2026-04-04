@@ -1,29 +1,38 @@
 <?php
 /**
  * Plugin Name: Public Art Map
+ * Plugin URI:  https://github.com/MichaelLauner/public-art-map
  * Description: Adds a custom post type for mapping public art locations.
- * Version: 0.1.0
- * Author: Michael Launer
- * License: GPL2+
+ * Version:     0.1.1
+ * Author:      Michael Launer
+ * License:     GPL2+
+ * Update URI:  https://github.com/MichaelLauner/public-art-map
  */
 
 defined( 'ABSPATH' ) || exit;
 
-// Post Type and Taxonomy Registration
-require_once plugin_dir_path(__FILE__) . 'includes/cpt-map-location.php';
-require_once plugin_dir_path(__FILE__) . 'includes/taxonomy-artwork-type.php';
-require_once plugin_dir_path(__FILE__) . 'includes/taxonomy-artwork-collection.php';
+define( 'PAM_VERSION', '0.1.1' );
+define( 'PAM_PLUGIN_FILE', __FILE__ );
+define( 'PAM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'PAM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-require_once plugin_dir_path(__FILE__) . 'includes/assets.php';
-require_once plugin_dir_path(__FILE__) . 'includes/meta-fields.php';
-require_once plugin_dir_path(__FILE__) . 'includes/settings-page.php';
-require_once plugin_dir_path(__FILE__) . 'includes/template-loader.php';
+// Post Type and Taxonomy Registration
+require_once PAM_PLUGIN_DIR . 'includes/plugin-updates.php';
+require_once PAM_PLUGIN_DIR . 'includes/rest-export.php';
+require_once PAM_PLUGIN_DIR . 'includes/cpt-map-location.php';
+require_once PAM_PLUGIN_DIR . 'includes/taxonomy-artwork-type.php';
+require_once PAM_PLUGIN_DIR . 'includes/taxonomy-artwork-collection.php';
+
+require_once PAM_PLUGIN_DIR . 'includes/assets.php';
+require_once PAM_PLUGIN_DIR . 'includes/meta-fields.php';
+require_once PAM_PLUGIN_DIR . 'includes/settings-page.php';
+require_once PAM_PLUGIN_DIR . 'includes/template-loader.php';
 
 // Template
-require_once plugin_dir_path(__FILE__) . 'templates/single-project-display.php';
+require_once PAM_PLUGIN_DIR . 'templates/single-project-display.php';
 
 // Tools
-require_once plugin_dir_path(__FILE__) . 'includes/tools.php';
+require_once PAM_PLUGIN_DIR . 'includes/tools.php';
 
 add_action( 'rest_api_init', function() {
     register_rest_field(
