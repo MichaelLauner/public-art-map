@@ -6,9 +6,9 @@ jQuery(function($){
         e.preventDefault();
         if ( frame ) { frame.open(); return; }
         frame = wp.media({
-            title: 'Select Images',
+            title: pamGalleryL10n.selectImages,
             library: { type: 'image' },
-            button: { text: 'Add to gallery' },
+            button: { text: pamGalleryL10n.addToGallery },
             multiple: true
         });
         frame.on('select', function(){
@@ -21,7 +21,7 @@ jQuery(function($){
                     $list.append(
                         '<li data-id="'+attachment.id+'">'+
                             '<img src="'+attachment.sizes.thumbnail.url+'"/>'+
-                            '<button class="remove-image">×</button>'+
+                            '<button class="remove-image" aria-label="'+pamGalleryL10n.removeImage+'">×</button>'+
                         '</li>'
                     );
                 }

@@ -50,9 +50,9 @@ function pam_add_gallery_modal_to_content( $content ) {
 	?>
 
 	<div class="pam-project-meta">
-		<?php if ( $artist ) : ?><p><strong>Artist:</strong> <?php echo esc_html( $artist ); ?></p><?php endif; ?>
+		<?php if ( $artist ) : ?><p><strong><?php esc_html_e( 'Artist:', PAM_TEXT_DOMAIN ); ?></strong> <?php echo esc_html( $artist ); ?></p><?php endif; ?>
 		<?php if ( $address || $city || $state || $zip ) : ?>
-			<p><strong>Location:</strong>
+			<p><strong><?php esc_html_e( 'Location:', PAM_TEXT_DOMAIN ); ?></strong>
 				<?php
 					$parts = array_filter([ $address, $city, $state, $zip ]);
 					echo esc_html( implode( ', ', $parts ) );
@@ -60,10 +60,10 @@ function pam_add_gallery_modal_to_content( $content ) {
 			</p>
 		<?php endif; ?>
 		<?php if ( ! empty( $types ) ) : ?>
-			<p><strong>Type:</strong> <?php echo esc_html( implode( ', ', $types ) ); ?></p>
+			<p><strong><?php esc_html_e( 'Type:', PAM_TEXT_DOMAIN ); ?></strong> <?php echo esc_html( implode( ', ', $types ) ); ?></p>
 		<?php endif; ?>
 		<?php if ( ! empty( $collections ) ) : ?>
-			<p><strong>Collection:</strong> <?php echo esc_html( implode( ', ', $collections ) ); ?></p>
+			<p><strong><?php esc_html_e( 'Collection:', PAM_TEXT_DOMAIN ); ?></strong> <?php echo esc_html( implode( ', ', $collections ) ); ?></p>
 		<?php endif; ?>
 	</div>
 
@@ -75,7 +75,7 @@ function pam_add_gallery_modal_to_content( $content ) {
 	$map_page_id = get_option( 'pam_map_page' );
 	if ( $map_page_id ) {
 		$map_url = get_permalink( $map_page_id );
-		$full_content .= '<p class="pam-back-link"><a href="' . esc_url( $map_url ) . '">&larr; Back to Public Art Map</a></p>';
+		$full_content .= '<p class="pam-back-link"><a href="' . esc_url( $map_url ) . '">&larr; ' . esc_html__( 'Back to Public Art Map', PAM_TEXT_DOMAIN ) . '</a></p>';
 	}
 
 	return $full_content;

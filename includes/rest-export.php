@@ -34,7 +34,7 @@ function pam_register_export_rest_routes() {
 				'token'          => array(
 					'type'        => 'string',
 					'required'    => false,
-					'description' => 'Optional shared secret configured in plugin settings.',
+					'description' => __( 'Optional shared secret configured in plugin settings.', PAM_TEXT_DOMAIN ),
 				),
 			),
 		)
@@ -51,7 +51,7 @@ function pam_can_access_export_feed( WP_REST_Request $request ) {
 	if ( ! get_option( 'pam_export_enabled', false ) ) {
 		return new WP_Error(
 			'pam_export_disabled',
-			'Public Art Map data sharing is disabled on this site.',
+			__( 'Public Art Map data sharing is disabled on this site.', PAM_TEXT_DOMAIN ),
 			array( 'status' => 403 )
 		);
 	}
@@ -71,7 +71,7 @@ function pam_can_access_export_feed( WP_REST_Request $request ) {
 	if ( '' === $provided_token || ! hash_equals( $configured_token, $provided_token ) ) {
 		return new WP_Error(
 			'pam_export_forbidden',
-			'A valid Public Art Map export token is required.',
+			__( 'A valid Public Art Map export token is required.', PAM_TEXT_DOMAIN ),
 			array( 'status' => 401 )
 		);
 	}

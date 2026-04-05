@@ -30,6 +30,11 @@ $terms = get_terms(array(
 	'hide_empty' => true,
 ));
 
+$collection_terms = get_terms(array(
+	'taxonomy'   => 'artwork_collection',
+	'hide_empty' => true,
+));
+
 $term_map = array();
 foreach ( $terms as $term ) {
 	$term_map[] = array(
@@ -38,6 +43,26 @@ foreach ( $terms as $term ) {
 		'name'  => $term->name,
 	);
 }
+
+$collection_map = array();
+foreach ( $collection_terms as $term ) {
+	$collection_map[] = array(
+		'id'   => $term->term_id,
+		'slug' => $term->slug,
+		'name' => $term->name,
+	);
+}
+
+$pam_i18n = array(
+	'filter'             => __( 'Filter', PAM_TEXT_DOMAIN ),
+	'filterByType'       => __( 'Filter by Type', PAM_TEXT_DOMAIN ),
+	'filterByCollection' => __( 'Filter by Collection', PAM_TEXT_DOMAIN ),
+	'close'              => __( 'Close', PAM_TEXT_DOMAIN ),
+	'information'        => __( 'Information', PAM_TEXT_DOMAIN ),
+	'directions'         => __( 'Directions', PAM_TEXT_DOMAIN ),
+	'removeFilter'       => __( 'Remove %s', PAM_TEXT_DOMAIN ),
+	'returnToSite'       => __( 'Return to Site', PAM_TEXT_DOMAIN ),
+);
 
 $location_data = array();
 foreach ( $locations as $location ) {
@@ -81,20 +106,6 @@ foreach ( $locations as $location ) {
 			'thumb'   => $thumb,
 			'url'     => get_permalink( $location ),
 		);
-
-		$collection_terms = get_terms(array(
-			'taxonomy'   => 'artwork_collection',
-			'hide_empty' => true,
-		));
-		$collection_map = array();
-		foreach ( $collection_terms as $term ) {
-			$collection_map[] = array(
-				'id'   => $term->term_id,
-				'slug' => $term->slug,
-				'name' => $term->name,
-			);
-		}
-
 	}
 }
 
@@ -103,12 +114,12 @@ foreach ( $locations as $location ) {
 <div id="pam-ui">
 	<?php if ( $logo_url ) : ?>
 		<a href="<?php echo esc_url( home_url() ); ?>" id="pam-site-logo">
-			<img src="<?php echo $logo_url; ?>" alt="Return to Site" />
+			<img src="<?php echo $logo_url; ?>" alt="<?php echo esc_attr( $pam_i18n['returnToSite'] ); ?>" />
 		</a>
 	<?php endif; ?>
 
 	<button id="pam-filter-toggle" aria-controls="pam-filter-drawer" aria-expanded="false">
-		☰ Filter
+		<?php echo esc_html( '☰ ' . $pam_i18n['filter'] ); ?>
 	</button>
 
 	<div id="pam-active-filters" class="pam-active-filters"></div>
@@ -116,19 +127,19 @@ foreach ( $locations as $location ) {
 
 <!-- Filter Options -->
 <div id="pam-filter">
-	<strong>Filter by Type</strong><br>
+	<strong><?php echo esc_html( $pam_i18n['filterByType'] ); ?></strong><br>
 	<div id="pam-filter-options-desktop"></div>
-	<strong style="margin-top:1em;display:block;">Filter by Collection</strong>
+	<strong style="margin-top:1em;display:block;"><?php echo esc_html( $pam_i18n['filterByCollection'] ); ?></strong>
 	<div id="pam-filter-collections-desktop"></div>
 </div>
 
 <!-- Slide-In Drawer for Mobile -->
 <div id="pam-filter-drawer">
-	<strong>Filter by Type</strong><br>
+	<strong><?php echo esc_html( $pam_i18n['filterByType'] ); ?></strong><br>
 	<div id="pam-filter-options-mobile"></div>
-	<strong style="margin-top:1em;display:block;">Filter by Collection</strong>
+	<strong style="margin-top:1em;display:block;"><?php echo esc_html( $pam_i18n['filterByCollection'] ); ?></strong>
 	<div id="pam-filter-collections-mobile"></div>
-	<button id="pam-filter-close">Close</button>
+	<button id="pam-filter-close"><?php echo esc_html( $pam_i18n['close'] ); ?></button>
 </div>
 
 <div id="pam-map"></div>
@@ -137,6 +148,7 @@ foreach ( $locations as $location ) {
 const pamLocations = <?php echo wp_json_encode( $location_data ); ?>;
 const pamTypes = <?php echo wp_json_encode( $term_map ); ?>;
 const pamCollections = <?php echo wp_json_encode( $collection_map ); ?>;
+const pamI18n = <?php echo wp_json_encode( $pam_i18n ); ?>;
 
 // Global filter init
 function getInitialFilters() {
@@ -224,12 +236,12 @@ document.addEventListener('DOMContentLoaded', function () {
 					<strong><a href="${loc.url}" style="text-decoration:none; color:inherit;">${loc.title}</a></strong><br />
 					<a 
 						href="${loc.url}" 
-						style="text-decoration:none; color:inherit;" ><small>Information</small></a>&nbsp;|&nbsp; 
+						style="text-decoration:none; color:inherit;" ><small>${pamI18n.information}</small></a>&nbsp;|&nbsp; 
 					<a 
 						href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}&travelmode=walking" 
 						target="_blank" 
 						rel="noopener noreferrer"
-						style="text-decoration:none; color:inherit;" ><small>Directions</small></a>
+						style="text-decoration:none; color:inherit;" ><small>${pamI18n.directions}</small></a>
 					</p>
 				</span>`;
 
@@ -299,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			const close = document.createElement('button');
 			close.textContent = '×';
-			close.setAttribute('aria-label', `Remove ${labelText}`);
+			close.setAttribute('aria-label', pamI18n.removeFilter.replace('%s', labelText));
 			close.addEventListener('click', () => {
 				// Uncheck all checkboxes with matching data-slug
 				document.querySelectorAll(`input[data-slug="${slug}"]`).forEach(cb => {

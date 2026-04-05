@@ -3,20 +3,20 @@ add_action( 'init', 'pam_register_map_location_cpt' );
 
 function pam_register_map_location_cpt() {
     $labels = array(
-        'name'               => 'Map Locations',
-        'singular_name'      => 'Map Location',
-        'menu_name'          => 'Map Locations',
-        'name_admin_bar'     => 'Map Location',
-        'add_new'            => 'Add New',
-        'add_new_item'       => 'Add New Location',
-        'new_item'           => 'New Location',
-        'edit_item'          => 'Edit Location',
-        'view_item'          => 'View Location',
-        'all_items'          => 'All Locations',
-        'search_items'       => 'Search Locations',
-        'parent_item_colon'  => 'Parent Locations:',
-        'not_found'          => 'No locations found.',
-        'not_found_in_trash' => 'No locations found in Trash.',
+        'name'               => __( 'Map Locations', PAM_TEXT_DOMAIN ),
+        'singular_name'      => __( 'Map Location', PAM_TEXT_DOMAIN ),
+        'menu_name'          => __( 'Map Locations', PAM_TEXT_DOMAIN ),
+        'name_admin_bar'     => __( 'Map Location', PAM_TEXT_DOMAIN ),
+        'add_new'            => __( 'Add New', PAM_TEXT_DOMAIN ),
+        'add_new_item'       => __( 'Add New Location', PAM_TEXT_DOMAIN ),
+        'new_item'           => __( 'New Location', PAM_TEXT_DOMAIN ),
+        'edit_item'          => __( 'Edit Location', PAM_TEXT_DOMAIN ),
+        'view_item'          => __( 'View Location', PAM_TEXT_DOMAIN ),
+        'all_items'          => __( 'All Locations', PAM_TEXT_DOMAIN ),
+        'search_items'       => __( 'Search Locations', PAM_TEXT_DOMAIN ),
+        'parent_item_colon'  => __( 'Parent Locations:', PAM_TEXT_DOMAIN ),
+        'not_found'          => __( 'No locations found.', PAM_TEXT_DOMAIN ),
+        'not_found_in_trash' => __( 'No locations found in Trash.', PAM_TEXT_DOMAIN ),
     );
 
     $args = array(

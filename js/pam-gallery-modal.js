@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	const nextBtn = document.getElementById('pamModalNext');
 	const thumbs = document.querySelectorAll('.pam-gallery-thumb');
 
+	if (closeBtn) {
+		closeBtn.setAttribute('aria-label', pamGallery.closeModal);
+	}
+	if (prevBtn) {
+		prevBtn.setAttribute('aria-label', pamGallery.previous);
+	}
+	if (nextBtn) {
+		nextBtn.setAttribute('aria-label', pamGallery.next);
+	}
+
 	let currentIndex = -1;
 	const imageSources = Array.from(thumbs).map(img => img.getAttribute('data-full') || img.src);
 
