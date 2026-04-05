@@ -21,59 +21,16 @@ define( 'PAM_PLUGIN_FILE', __FILE__ );
 define( 'PAM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PAM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-add_action( 'plugins_loaded', 'pam_load_textdomain' );
+require_once PAM_PLUGIN_DIR . 'src/Infrastructure/Autoloader.php';
 
-/**
- * Load the plugin translations.
- */
-function pam_load_textdomain() {
-	load_plugin_textdomain(
-		PAM_TEXT_DOMAIN,
-		false,
-		dirname( plugin_basename( PAM_PLUGIN_FILE ) ) . '/languages'
-	);
-}
+PublicArtMap\Infrastructure\Autoloader::register( 'PublicArtMap', PAM_PLUGIN_DIR . 'src' );
 
-// Post Type and Taxonomy Registration
-require_once PAM_PLUGIN_DIR . 'includes/plugin-updates.php';
-require_once PAM_PLUGIN_DIR . 'includes/rest-export.php';
-require_once PAM_PLUGIN_DIR . 'includes/cpt-map-location.php';
-require_once PAM_PLUGIN_DIR . 'includes/taxonomy-artwork-type.php';
-require_once PAM_PLUGIN_DIR . 'includes/taxonomy-artwork-collection.php';
+require_once PAM_PLUGIN_DIR . 'includes/compat.php';
 
-require_once PAM_PLUGIN_DIR . 'includes/assets.php';
-require_once PAM_PLUGIN_DIR . 'includes/meta-fields.php';
-require_once PAM_PLUGIN_DIR . 'includes/settings-page.php';
-require_once PAM_PLUGIN_DIR . 'includes/template-loader.php';
-
-// Template
-require_once PAM_PLUGIN_DIR . 'templates/single-project-display.php';
-
-// Tools
-require_once PAM_PLUGIN_DIR . 'includes/tools.php';
-
-add_action( 'rest_api_init', function() {
-    register_rest_field(
-        'map_location',            // CPT slug
-        'pam_coordinates',         // the new REST field
-        [
-            'get_callback'    => function( $object ) {
-                // Return the stored meta value
-                return get_post_meta( $object['id'], 'pam_coordinates', true );
-            },
-            'update_callback' => function( $value, $object ) {
-                // Allow updating via the REST API if needed
-                update_post_meta(
-                    $object->ID,
-                    'pam_coordinates',
-                    sanitize_text_field( $value )
-                );
-            },
-            'schema'          => [
-                'type'        => 'string',
-                'description' => __( 'Latitude and longitude as "lat,lng"', PAM_TEXT_DOMAIN ),
-                'context'     => [ 'view', 'edit' ],
-            ],
-        ]
-    );
-});
+PublicArtMap\Plugin::boot(
+	new PublicArtMap\Infrastructure\PluginContext(
+		PAM_PLUGIN_FILE,
+		PAM_VERSION,
+		PAM_TEXT_DOMAIN
+	)
+);
