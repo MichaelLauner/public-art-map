@@ -48,7 +48,8 @@ foreach ( $locations as $location ) {
 		$types = wp_get_post_terms( $location->ID, 'artwork_type', array( 'fields' => 'all' ) );
 		$first_type = $types[0] ?? null;
 
-		$collections = wp_get_post_terms( $location->ID, 'artwork_collection', array( 'fields' => 'slugs' ) );
+		$collection_terms_for_location = wp_get_post_terms( $location->ID, 'artwork_collection', array( 'fields' => 'all' ) );
+		$collections = wp_list_pluck( $collection_terms_for_location, 'slug' );
 
 		$color = '#4a7789';
 		$icon_url = null;
@@ -69,17 +70,30 @@ foreach ( $locations as $location ) {
 		}
 
 		$thumb = get_the_post_thumbnail_url( $location->ID, 'medium' );
+		$image = get_the_post_thumbnail_url( $location->ID, 'large' ) ?: $thumb;
+		$address = trim( get_post_meta( $location->ID, 'pam_address', true ) );
+		$city = trim( get_post_meta( $location->ID, 'pam_city', true ) );
+		$state = trim( get_post_meta( $location->ID, 'pam_state', true ) );
+		$zip = trim( get_post_meta( $location->ID, 'pam_zip', true ) );
+		$location_parts = array_filter( array( $address, $city, $state, $zip ) );
 
 		$location_data[] = array(
-			'title'   => get_the_title( $location ),
+			'id'      => $location->ID,
+			'title'   => wp_specialchars_decode( get_the_title( $location ), ENT_QUOTES ),
+			'artist'  => get_post_meta( $location->ID, 'pam_artist', true ),
+			'location'=> implode( ', ', $location_parts ),
 			'lat'     => $lat,
 			'lng'     => $lng,
 			'types'   => wp_list_pluck( $types, 'slug' ),
+			'typeNames' => wp_list_pluck( $types, 'name' ),
 			'collections'=> $collections,
+			'collectionNames'=> wp_list_pluck( $collection_terms_for_location, 'name' ),
 			'color'   => $color,
 			'icon'    => $icon_url,
 			'thumb'   => $thumb,
+			'image'   => $image,
 			'url'     => get_permalink( $location ),
+			'directionsUrl' => 'https://www.google.com/maps/dir/?api=1&destination=' . rawurlencode( $lat . ',' . $lng ) . '&travelmode=walking',
 		);
 
 		$collection_terms = get_terms(array(
@@ -137,6 +151,37 @@ foreach ( $locations as $location ) {
 	<button type="button" id="pam-inset-close" class="pam-inset-close" aria-label="Hide inset map">×</button>
 	<div id="pam-inset-map"></div>
 </div>
+
+<div id="pam-detail-overlay" class="pam-detail-overlay" hidden></div>
+<aside id="pam-detail-panel" class="pam-detail-panel" aria-hidden="true" aria-label="Public art location details">
+	<button type="button" id="pam-detail-close" class="pam-detail-close" aria-label="Close location details">×</button>
+	<div class="pam-detail-handle" aria-hidden="true"></div>
+	<img id="pam-detail-image" class="pam-detail-image" alt="">
+	<div class="pam-detail-body">
+		<h2 id="pam-detail-title"></h2>
+		<dl class="pam-detail-list">
+			<div class="pam-detail-row" data-field="artist">
+				<dt>Artist</dt>
+				<dd id="pam-detail-artist"></dd>
+			</div>
+			<div class="pam-detail-row" data-field="location">
+				<dt>Location</dt>
+				<dd>
+					<span id="pam-detail-location"></span>
+					<a id="pam-detail-directions" class="pam-detail-directions" target="_blank" rel="noopener noreferrer">Walking directions</a>
+				</dd>
+			</div>
+			<div class="pam-detail-row" data-field="type">
+				<dt>Type</dt>
+				<dd id="pam-detail-type"></dd>
+			</div>
+			<div class="pam-detail-row" data-field="collection">
+				<dt>Collection</dt>
+				<dd id="pam-detail-collection"></dd>
+			</div>
+		</dl>
+	</div>
+</aside>
 
 <script>
 const pamLocations = <?php echo wp_json_encode( $location_data ); ?>;
@@ -217,30 +262,96 @@ document.addEventListener('DOMContentLoaded', function () {
 	let insetDismissed = false;
 	let activeMapView = 'nearby';
 	let currentLocations = [];
+	let mapsReady = false;
+	let mainRenderer = null;
+	let insetRenderer = null;
 
-	function getPopupContent(loc) {
-		return `
-			<span>
-				<p>
-				<strong><a href="${loc.url}" style="text-decoration:none; color:inherit;">${loc.title}</a></strong><br />
-				<a
-					href="${loc.url}"
-					style="text-decoration:none; color:inherit;" ><small>Information</small></a>&nbsp;|&nbsp;
-				<a
-					href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}&travelmode=walking"
-					target="_blank"
-					rel="noopener noreferrer"
-					style="text-decoration:none; color:inherit;" ><small>Directions</small></a>
-				</p>
-			</span>`;
+	const MAIN_SOURCE_ID = 'pam-main-locations';
+	const INSET_SOURCE_ID = 'pam-inset-locations';
+	const locationById = new Map(pamLocations.map(loc => [String(loc.id), loc]));
+	const detailOverlay = document.getElementById('pam-detail-overlay');
+	const detailPanel = document.getElementById('pam-detail-panel');
+	const detailClose = document.getElementById('pam-detail-close');
+	const detailImage = document.getElementById('pam-detail-image');
+	const detailTitle = document.getElementById('pam-detail-title');
+	const detailArtist = document.getElementById('pam-detail-artist');
+	const detailLocation = document.getElementById('pam-detail-location');
+	const detailDirections = document.getElementById('pam-detail-directions');
+	const detailType = document.getElementById('pam-detail-type');
+	const detailCollection = document.getElementById('pam-detail-collection');
+
+	function whenMapLoads(targetMap) {
+		return new Promise(resolve => {
+			if (targetMap.loaded()) {
+				resolve();
+				return;
+			}
+
+			targetMap.once('load', resolve);
+		});
 	}
 
-	function createMarker(loc, targetMap, popupOffset = [0, -25], shouldAttachPopup = true) {
+	function createFeatureCollection(locations) {
+		return {
+			type: 'FeatureCollection',
+			features: locations.map(loc => ({
+				type: 'Feature',
+				geometry: {
+					type: 'Point',
+					coordinates: [loc.lng, loc.lat]
+				},
+				properties: {
+					id: String(loc.id)
+				}
+			}))
+		};
+	}
+
+	function ensureClusterSource(targetMap, sourceId) {
+		if (!targetMap.getSource(sourceId)) {
+			targetMap.addSource(sourceId, {
+				type: 'geojson',
+				data: createFeatureCollection([]),
+				cluster: true,
+				clusterMaxZoom: 17,
+				clusterRadius: 36
+			});
+		}
+
+		if (!targetMap.getLayer(`${sourceId}-clusters-hit`)) {
+			targetMap.addLayer({
+				id: `${sourceId}-clusters-hit`,
+				type: 'circle',
+				source: sourceId,
+				filter: ['has', 'point_count'],
+				paint: {
+					'circle-radius': 1,
+					'circle-opacity': 0
+				}
+			});
+		}
+
+		if (!targetMap.getLayer(`${sourceId}-points-hit`)) {
+			targetMap.addLayer({
+				id: `${sourceId}-points-hit`,
+				type: 'circle',
+				source: sourceId,
+				filter: ['!', ['has', 'point_count']],
+				paint: {
+					'circle-radius': 1,
+					'circle-opacity': 0
+				}
+			});
+		}
+	}
+
+	function createLocationMarkerElement(loc) {
 		const baseColor = loc.color || '#fff';
-		const imageUrl = loc.thumb || loc.icon;
+		const imageUrl = loc.thumb || loc.icon || '';
 
 		const markerEl = document.createElement('div');
 		markerEl.className = 'pam-marker-wrapper';
+		markerEl.style.setProperty('--pam-marker-color', baseColor);
 
 		const markerContent = document.createElement('div');
 		markerContent.className = 'pam-marker-content';
@@ -248,20 +359,259 @@ document.addEventListener('DOMContentLoaded', function () {
 			markerContent.style.backgroundImage = `url('${imageUrl}')`;
 		}
 		markerContent.style.backgroundColor = baseColor;
-		markerContent.style.border = '2px solid ' + baseColor;
 
 		markerEl.appendChild(markerContent);
+		markerEl.addEventListener('mouseenter', () => {
+			markerEl.classList.add('is-hovered');
+			markerEl.style.zIndex = '1000';
+		});
+		markerEl.addEventListener('mouseleave', () => {
+			markerEl.classList.remove('is-hovered');
+			markerEl.style.zIndex = '';
+		});
 
-		const marker = new mapboxgl.Marker(markerEl)
-			.setLngLat([loc.lng, loc.lat])
-			.addTo(targetMap);
+		return markerEl;
+	}
 
-		if (shouldAttachPopup) {
-			marker.setPopup(new mapboxgl.Popup({ offset: popupOffset }).setHTML(getPopupContent(loc)));
+	function createClusterMarkerElement(count) {
+		const markerEl = document.createElement('button');
+		markerEl.type = 'button';
+		markerEl.className = 'pam-cluster-marker';
+		markerEl.setAttribute('aria-label', `${count} public art locations`);
+
+		const stack = document.createElement('span');
+		stack.className = 'pam-cluster-stack';
+		for (let index = 0; index < 3; index++) {
+			const image = document.createElement('span');
+			image.className = 'pam-cluster-thumb';
+			stack.appendChild(image);
 		}
 
-		return marker;
+		const countBadge = document.createElement('span');
+		countBadge.className = 'pam-cluster-count';
+		countBadge.textContent = count;
+
+		markerEl.append(stack, countBadge);
+		return markerEl;
 	}
+
+	function hydrateClusterMarker(targetMap, sourceId, markerEl, clusterId) {
+		const source = targetMap.getSource(sourceId);
+		if (!source || !source.getClusterLeaves) {
+			return;
+		}
+
+		source.getClusterLeaves(clusterId, 3, 0, (error, leaves) => {
+			if (error || !leaves) {
+				return;
+			}
+
+			const thumbs = markerEl.querySelectorAll('.pam-cluster-thumb');
+			leaves.forEach((leaf, index) => {
+				const loc = locationById.get(String(leaf.properties.id));
+				const imageUrl = loc?.thumb || loc?.icon || '';
+				if (thumbs[index] && imageUrl) {
+					thumbs[index].style.backgroundImage = `url('${imageUrl}')`;
+					thumbs[index].style.backgroundColor = loc.color || '#4a7789';
+				}
+			});
+		});
+	}
+
+	function createClusteredMarkerRenderer(targetMap, sourceId, options = {}) {
+		const markerCache = {};
+		let markersOnScreen = {};
+		let hasData = false;
+		let updateScheduled = false;
+
+		ensureClusterSource(targetMap, sourceId);
+
+		function clearMarkers() {
+			Object.values(markersOnScreen).forEach(marker => marker.remove());
+			markersOnScreen = {};
+		}
+
+		function scheduleUpdate() {
+			if (updateScheduled) {
+				return;
+			}
+
+			updateScheduled = true;
+			requestAnimationFrame(() => {
+				updateScheduled = false;
+				updateMarkers();
+			});
+		}
+
+		function updateMarkers() {
+			if (!hasData || !targetMap.getSource(sourceId)) {
+				clearMarkers();
+				return;
+			}
+
+			const features = targetMap.querySourceFeatures(sourceId);
+			const nextMarkers = {};
+			const seen = new Set();
+
+			features.forEach(feature => {
+				const props = feature.properties || {};
+				const isCluster = Boolean(props.cluster);
+				const key = isCluster ? `cluster-${props.cluster_id}` : `location-${props.id}`;
+				const coords = feature.geometry.coordinates;
+
+				if (seen.has(key)) {
+					return;
+				}
+				seen.add(key);
+
+				let marker = markerCache[key];
+				if (!marker) {
+					if (isCluster) {
+						const markerEl = createClusterMarkerElement(props.point_count_abbreviated || props.point_count);
+						markerEl.addEventListener('click', event => {
+							event.stopPropagation();
+							if (options.onClusterClick) {
+								options.onClusterClick(markerEl.pamClusterFeature);
+							}
+						});
+						marker = markerCache[key] = new mapboxgl.Marker({ element: markerEl, anchor: 'center' }).setLngLat(coords);
+						hydrateClusterMarker(targetMap, sourceId, markerEl, props.cluster_id);
+					} else {
+						const loc = locationById.get(String(props.id));
+						if (!loc) {
+							return;
+						}
+						const markerEl = createLocationMarkerElement(loc);
+						markerEl.addEventListener('click', event => {
+							event.stopPropagation();
+							if (options.onLocationClick) {
+								options.onLocationClick(loc);
+							}
+						});
+						marker = markerCache[key] = new mapboxgl.Marker({ element: markerEl, anchor: 'bottom' }).setLngLat([loc.lng, loc.lat]);
+					}
+				}
+
+				if (isCluster) {
+					marker.getElement().pamClusterFeature = feature;
+				}
+				marker.setLngLat(coords);
+				nextMarkers[key] = marker;
+				if (!markersOnScreen[key]) {
+					marker.addTo(targetMap);
+				}
+			});
+
+			Object.keys(markersOnScreen).forEach(key => {
+				if (!nextMarkers[key]) {
+					markersOnScreen[key].remove();
+				}
+			});
+
+			markersOnScreen = nextMarkers;
+		}
+
+		targetMap.on('render', scheduleUpdate);
+		targetMap.on('moveend', scheduleUpdate);
+		targetMap.on('zoomend', scheduleUpdate);
+
+		return {
+			setLocations(locations) {
+				hasData = locations.length > 0;
+				targetMap.getSource(sourceId).setData(createFeatureCollection(locations));
+				targetMap.once('idle', updateMarkers);
+				scheduleUpdate();
+			},
+			clear() {
+				hasData = false;
+				targetMap.getSource(sourceId).setData(createFeatureCollection([]));
+				clearMarkers();
+			}
+		};
+	}
+
+	function expandCluster(targetMap, sourceId, feature) {
+		const source = targetMap.getSource(sourceId);
+		if (!source || !source.getClusterExpansionZoom) {
+			return;
+		}
+
+		source.getClusterExpansionZoom(feature.properties.cluster_id, (error, zoom) => {
+			if (error) {
+				return;
+			}
+
+			targetMap.easeTo({
+				center: feature.geometry.coordinates,
+				zoom
+			});
+		});
+	}
+
+	function setText(element, value) {
+		element.textContent = value || '';
+	}
+
+	function setDetailRow(field, value, targetElement) {
+		const row = detailPanel.querySelector(`[data-field="${field}"]`);
+		const hasValue = Boolean(value);
+		row.hidden = !hasValue;
+		if (targetElement) {
+			setText(targetElement, value);
+		}
+	}
+
+	function showLocationDetails(loc) {
+		detailImage.hidden = !loc.image;
+		if (loc.image) {
+			detailImage.src = loc.image;
+			detailImage.alt = loc.title ? `${loc.title} artwork image` : 'Artwork image';
+		} else {
+			detailImage.removeAttribute('src');
+			detailImage.alt = '';
+		}
+
+		setText(detailTitle, loc.title);
+		setDetailRow('artist', loc.artist, detailArtist);
+		setDetailRow('location', loc.location, detailLocation);
+		setDetailRow('type', (loc.typeNames || []).join(', '), detailType);
+		setDetailRow('collection', (loc.collectionNames || []).join(', '), detailCollection);
+
+		detailDirections.href = loc.directionsUrl || '#';
+		detailDirections.hidden = !loc.directionsUrl || !loc.location;
+		detailOverlay.hidden = false;
+		detailPanel.setAttribute('aria-hidden', 'false');
+		detailOverlay.classList.add('is-visible');
+		detailPanel.classList.add('is-visible');
+	}
+
+	function closeLocationDetails() {
+		detailOverlay.classList.remove('is-visible');
+		detailPanel.classList.remove('is-visible');
+		detailPanel.setAttribute('aria-hidden', 'true');
+		setTimeout(() => {
+			if (!detailPanel.classList.contains('is-visible')) {
+				detailOverlay.hidden = true;
+			}
+		}, 240);
+	}
+
+	let detailTouchStartY = null;
+	detailPanel.addEventListener('touchstart', event => {
+		detailTouchStartY = event.touches[0].clientY;
+	}, { passive: true });
+	detailPanel.addEventListener('touchend', event => {
+		if (detailTouchStartY === null) {
+			return;
+		}
+		const touchEndY = event.changedTouches[0].clientY;
+		if (touchEndY - detailTouchStartY > 60) {
+			closeLocationDetails();
+		}
+		detailTouchStartY = null;
+	}, { passive: true });
+	detailOverlay.addEventListener('click', closeLocationDetails);
+	detailClose.addEventListener('click', closeLocationDetails);
 
 	function getMedian(values) {
 		const sorted = [...values].sort((a, b) => a - b);
@@ -354,10 +704,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function renderMarkers(locations) {
-		markers.forEach(marker => marker.remove());
-		markers = [];
-		insetMarkers.forEach(marker => marker.remove());
-		insetMarkers = [];
+		if (!mapsReady) {
+			return;
+		}
 
 		const splitLocations = splitInsetLocations(locations);
 		const canShowInset = splitLocations.active && !insetDismissed;
@@ -368,9 +717,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			? splitLocations.nearby
 			: splitLocations.distant;
 
-		mainLocations.forEach(loc => {
-			markers.push(createMarker(loc, map));
-		});
+		mainRenderer.setLocations(mainLocations);
 
 		const isSmallScreen = window.innerWidth < 600;
 		fitMapToLocations(map, mainLocations, isSmallScreen ? 100 : 200, activeMapView === 'distant' ? 10 : 13);
@@ -378,20 +725,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (canShowInset) {
 			setInsetLabel(activeMapView);
 			insetContainer.classList.add('is-visible');
-			insetLocations.forEach(loc => {
-				const marker = createMarker(loc, insetMap, [0, -20], false);
-				marker.getElement().addEventListener('click', event => {
-					event.stopPropagation();
-					swapMapView();
-				});
-				insetMarkers.push(marker);
-			});
+			insetRenderer.setLocations(insetLocations);
 			requestAnimationFrame(() => {
 				insetMap.resize();
 				fitMapToLocations(insetMap, insetLocations, 45, activeMapView === 'distant' ? 13 : 10);
 			});
 		} else {
 			insetContainer.classList.remove('is-visible');
+			insetRenderer.clear();
 		}
 	}
 
@@ -436,6 +777,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		insetDismissed = false;
 		activeMapView = 'nearby';
 		currentLocations = filtered;
+		closeLocationDetails();
 		renderMarkers(filtered);
 		updateActiveFiltersDisplay();
 
@@ -534,9 +876,17 @@ document.addEventListener('DOMContentLoaded', function () {
 			.appendChild(createCheckbox(term, 'collection'));
 	});
 
-	filterLocations();
+	Promise.all([whenMapLoads(map), whenMapLoads(insetMap)]).then(() => {
+		mapsReady = true;
+		mainRenderer = createClusteredMarkerRenderer(map, MAIN_SOURCE_ID, {
+			onLocationClick: showLocationDetails,
+			onClusterClick: feature => expandCluster(map, MAIN_SOURCE_ID, feature)
+		});
+		insetRenderer = createClusteredMarkerRenderer(insetMap, INSET_SOURCE_ID, {
+			onLocationClick: swapMapView,
+			onClusterClick: swapMapView
+		});
 
-	map.on('load', () => {
 		const layers = map.getStyle().layers;
 		const labelLayerId = layers.find(
 			layer => layer.type === 'symbol' && layer.layout['text-field']
@@ -559,6 +909,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			},
 			labelLayerId
 		);
+		filterLocations();
 	});
 });
 </script>

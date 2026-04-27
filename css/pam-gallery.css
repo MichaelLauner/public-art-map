@@ -98,7 +98,12 @@ html, body, #pam-map {
 }
 
 .pam-inset .pam-marker-content:hover {
-	transform: scale(2.4);
+	transform: scale(1.4);
+}
+
+.pam-inset .pam-cluster-marker {
+	transform: scale(0.72);
+	transform-origin: center;
 }
 
 /* ------------------------------
@@ -219,9 +224,9 @@ html, body, #pam-map {
    Marker Styles
 ------------------------------ */
 .pam-marker-wrapper {
-	width: 30px;
-	height: 30px;
-	transform: translate(-50%, -100%);
+	width: 50px;
+	height: 50px;
+	z-index: 1;
 }
 
 .pam-marker-content {
@@ -231,13 +236,194 @@ html, body, #pam-map {
 	background-position: center;
 	border-radius: 50%;
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-	border: 2px solid white;
 	transition: transform 0.2s ease;
 }
 
+.pam-marker-wrapper.is-hovered {
+	z-index: 1000;
+}
+
+.pam-marker-wrapper.is-hovered .pam-marker-content,
 .pam-marker-content:hover {
-	transform: scale(5);
+	transform: scale(3);
 	cursor: pointer;
+}
+
+.pam-cluster-marker {
+	position: absolute;
+	width: 58px;
+	height: 58px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+}
+
+.pam-cluster-stack {
+	position: absolute;
+	inset: 0;
+}
+
+.pam-cluster-thumb {
+	position: absolute;
+	width: 38px;
+	height: 38px;
+	background: #4a7789;
+	background-size: cover;
+	background-position: center;
+	border-radius: 50%;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.pam-cluster-thumb:nth-child(1) {
+	left: 4px;
+	top: 13px;
+}
+
+.pam-cluster-thumb:nth-child(2) {
+	left: 10px;
+	top: 5px;
+}
+
+.pam-cluster-thumb:nth-child(3) {
+	left: 16px;
+	top: 13px;
+}
+
+.pam-cluster-count {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 24px;
+	height: 24px;
+	padding: 0 6px;
+	background: #222;
+	border: 2px solid #fff;
+	border-radius: 999px;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1;
+	transform: translate(-50%, -50%);
+}
+
+/* ------------------------------
+   Location Detail Panel
+------------------------------ */
+.pam-detail-overlay {
+	display: none;
+}
+
+.pam-detail-panel {
+	position: fixed;
+	top: 96px;
+	right: 18px;
+	z-index: 1200;
+	width: min(360px, calc(100vw - 36px));
+	max-height: calc(100vh - 132px);
+	overflow-y: auto;
+	background: #fff;
+	border-radius: 6px;
+	box-shadow: 0 10px 36px rgba(0, 0, 0, 0.28);
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(10px);
+	transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.pam-detail-panel.is-visible {
+	opacity: 1;
+	pointer-events: auto;
+	transform: translateY(0);
+}
+
+.pam-detail-close {
+	position: absolute;
+	top: 0;
+	right: 0;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	background: rgba(255, 255, 255, 0.94);
+	border: none;
+	border-radius: 0 6px 0 6px;
+	color: #222;
+	cursor: pointer;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.pam-detail-handle {
+	display: none;
+}
+
+.pam-detail-image {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	background: #e8e8e8;
+}
+
+.pam-detail-image[hidden] {
+	display: none;
+}
+
+.pam-detail-body {
+	padding: 16px;
+}
+
+.pam-detail-body h2 {
+	margin: 0 34px 12px 0;
+	font-size: 24px;
+	line-height: 1.1;
+}
+
+.pam-detail-list {
+	display: grid;
+	gap: 12px;
+	margin: 0;
+}
+
+.pam-detail-row {
+	display: grid;
+	gap: 3px;
+}
+
+.pam-detail-row[hidden] {
+	display: none;
+}
+
+.pam-detail-row dt {
+	color: #555;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.pam-detail-row dd {
+	margin: 0;
+	color: #222;
+	font-size: 15px;
+	line-height: 1.35;
+}
+
+.pam-detail-directions {
+	display: inline-block;
+	margin-top: 4px;
+	color: #24408c;
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: underline;
 }
 
 /* ------------------------------
@@ -284,6 +470,60 @@ html, body, #pam-map {
 	.pam-inset .pam-marker-wrapper {
 		width: 20px;
 		height: 20px;
+	}
+
+	.pam-detail-overlay.is-visible {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 1190;
+		display: block;
+		width: 100%;
+		height: 22vh;
+		background: rgba(0, 0, 0, 0.48);
+	}
+
+	.pam-detail-panel {
+		top: auto;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		max-height: none;
+		height: 78vh;
+		border-radius: 14px 14px 0 0;
+		transform: translateY(105%);
+	}
+
+	.pam-detail-panel.is-visible {
+		transform: translateY(0);
+	}
+
+	.pam-detail-close {
+		top: 8px;
+		right: 10px;
+		border-radius: 50%;
+	}
+
+	.pam-detail-handle {
+		position: absolute;
+		top: 8px;
+		left: 50%;
+		z-index: 2;
+		display: block;
+		width: 42px;
+		height: 5px;
+		background: rgba(0, 0, 0, 0.28);
+		border-radius: 999px;
+		transform: translateX(-50%);
+	}
+
+	.pam-detail-image {
+		aspect-ratio: 16 / 9;
+	}
+
+	.pam-detail-body {
+		padding: 16px 18px 24px;
 	}
 
 	#pam-ui {

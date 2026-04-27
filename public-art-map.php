@@ -3,7 +3,7 @@
  * Plugin Name: Public Art Map
  * Plugin URI:  https://github.com/MichaelLauner/public-art-map
  * Description: Adds a custom post type for mapping public art locations.
- * Version:     0.1.1
+ * Version:     0.1.2
  * Author:      Michael Launer
  * License:     GPL2+
  * Update URI:  https://github.com/MichaelLauner/public-art-map
@@ -11,7 +11,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'PAM_VERSION', '0.1.1' );
+define( 'PAM_VERSION', '0.1.2' );
 define( 'PAM_PLUGIN_FILE', __FILE__ );
 define( 'PAM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PAM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

@@ -1,7 +1,7 @@
 === Public Art Map ===
 Contributors: michaellauner
 Tags: maps, public art, custom post type
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,6 +17,12 @@ Public Art Map adds the content types, metadata, and frontend templates needed t
 2. Activate the plugin through the 'Plugins' screen in WordPress.
 
 == Changelog ==
+
+= 0.1.2 =
+* Add automatic picture-in-picture map support for distant public art locations.
+* Add custom photo-stack clustering for nearby map locations.
+* Replace basic map popups with desktop detail cards and mobile slide-up drawers.
+* Increase public map pin sizing and improve hover stacking for overlapping pins.
 
 = 0.1.1 =
 * Add GitHub-based update support for client deployments.
