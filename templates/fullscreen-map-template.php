@@ -132,6 +132,11 @@ foreach ( $locations as $location ) {
 </div>
 
 <div id="pam-map"></div>
+<div id="pam-inset" class="pam-inset" aria-label="Distant public art locations">
+	<div class="pam-inset-label">Further away</div>
+	<button type="button" id="pam-inset-close" class="pam-inset-close" aria-label="Hide inset map">×</button>
+	<div id="pam-inset-map"></div>
+</div>
 
 <script>
 const pamLocations = <?php echo wp_json_encode( $location_data ); ?>;
@@ -184,6 +189,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 document.addEventListener('DOMContentLoaded', function () {
 	mapboxgl.accessToken = '<?php echo esc_js( $mapbox_key ); ?>';
+	const INSET_DISTANCE_MILES = 12;
+	const INSET_MIN_NEARBY_LOCATIONS = 5;
 
 	const map = new mapboxgl.Map({
 		container: 'pam-map',
@@ -195,56 +202,216 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	map.addControl(new mapboxgl.NavigationControl());
 
-	const bounds = new mapboxgl.LngLatBounds();
+	const insetContainer = document.getElementById('pam-inset');
+	const insetLabel = insetContainer.querySelector('.pam-inset-label');
+	const insetClose = document.getElementById('pam-inset-close');
+	const insetMap = new mapboxgl.Map({
+		container: 'pam-inset-map',
+		style: 'mapbox://styles/mapbox/streets-v11',
+		interactive: true,
+		attributionControl: false
+	});
+
 	let markers = [];
+	let insetMarkers = [];
+	let insetDismissed = false;
+	let activeMapView = 'nearby';
+	let currentLocations = [];
+
+	function getPopupContent(loc) {
+		return `
+			<span>
+				<p>
+				<strong><a href="${loc.url}" style="text-decoration:none; color:inherit;">${loc.title}</a></strong><br />
+				<a
+					href="${loc.url}"
+					style="text-decoration:none; color:inherit;" ><small>Information</small></a>&nbsp;|&nbsp;
+				<a
+					href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}&travelmode=walking"
+					target="_blank"
+					rel="noopener noreferrer"
+					style="text-decoration:none; color:inherit;" ><small>Directions</small></a>
+				</p>
+			</span>`;
+	}
+
+	function createMarker(loc, targetMap, popupOffset = [0, -25], shouldAttachPopup = true) {
+		const baseColor = loc.color || '#fff';
+		const imageUrl = loc.thumb || loc.icon;
+
+		const markerEl = document.createElement('div');
+		markerEl.className = 'pam-marker-wrapper';
+
+		const markerContent = document.createElement('div');
+		markerContent.className = 'pam-marker-content';
+		if (imageUrl) {
+			markerContent.style.backgroundImage = `url('${imageUrl}')`;
+		}
+		markerContent.style.backgroundColor = baseColor;
+		markerContent.style.border = '2px solid ' + baseColor;
+
+		markerEl.appendChild(markerContent);
+
+		const marker = new mapboxgl.Marker(markerEl)
+			.setLngLat([loc.lng, loc.lat])
+			.addTo(targetMap);
+
+		if (shouldAttachPopup) {
+			marker.setPopup(new mapboxgl.Popup({ offset: popupOffset }).setHTML(getPopupContent(loc)));
+		}
+
+		return marker;
+	}
+
+	function getMedian(values) {
+		const sorted = [...values].sort((a, b) => a - b);
+		const middle = Math.floor(sorted.length / 2);
+
+		if (sorted.length % 2) {
+			return sorted[middle];
+		}
+
+		return (sorted[middle - 1] + sorted[middle]) / 2;
+	}
+
+	function getDistanceMiles(a, b) {
+		const earthRadiusMiles = 3958.8;
+		const toRadians = degrees => degrees * Math.PI / 180;
+		const latDelta = toRadians(b.lat - a.lat);
+		const lngDelta = toRadians(b.lng - a.lng);
+		const startLat = toRadians(a.lat);
+		const endLat = toRadians(b.lat);
+		const haversine =
+			Math.sin(latDelta / 2) * Math.sin(latDelta / 2) +
+			Math.cos(startLat) * Math.cos(endLat) *
+			Math.sin(lngDelta / 2) * Math.sin(lngDelta / 2);
+
+		return 2 * earthRadiusMiles * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+	}
+
+	function splitInsetLocations(locations) {
+		if (locations.length < INSET_MIN_NEARBY_LOCATIONS + 1) {
+			return {
+				active: false,
+				nearby: locations,
+				distant: []
+			};
+		}
+
+		const anchor = {
+			lat: getMedian(locations.map(loc => loc.lat)),
+			lng: getMedian(locations.map(loc => loc.lng))
+		};
+		const nearby = [];
+		const distant = [];
+
+		locations.forEach(loc => {
+			if (getDistanceMiles(anchor, loc) > INSET_DISTANCE_MILES) {
+				distant.push(loc);
+			} else {
+				nearby.push(loc);
+			}
+		});
+
+		const active = nearby.length >= INSET_MIN_NEARBY_LOCATIONS && distant.length > 0;
+
+		return {
+			active,
+			nearby,
+			distant
+		};
+	}
+
+	function fitMapToLocations(targetMap, locations, padding, fallbackZoom) {
+		if (locations.length === 0) {
+			return;
+		}
+
+		if (locations.length === 1) {
+			targetMap.flyTo({
+				center: [locations[0].lng, locations[0].lat],
+				zoom: fallbackZoom
+			});
+			return;
+		}
+
+		const bounds = new mapboxgl.LngLatBounds();
+		locations.forEach(loc => bounds.extend([loc.lng, loc.lat]));
+		targetMap.fitBounds(bounds, { padding });
+	}
+
+	function setInsetLabel(view) {
+		insetLabel.textContent = view === 'distant' ? 'Main cluster' : 'Further away';
+		insetContainer.setAttribute(
+			'aria-label',
+			view === 'distant' ? 'Main cluster public art locations' : 'Further away public art locations'
+		);
+	}
+
+	function swapMapView() {
+		activeMapView = activeMapView === 'distant' ? 'nearby' : 'distant';
+		renderMarkers(currentLocations);
+	}
 
 	function renderMarkers(locations) {
 		markers.forEach(marker => marker.remove());
 		markers = [];
+		insetMarkers.forEach(marker => marker.remove());
+		insetMarkers = [];
 
-		locations.forEach(loc => {
-			const baseColor = loc.color || '#fff';
+		const splitLocations = splitInsetLocations(locations);
+		const canShowInset = splitLocations.active && !insetDismissed;
+		const mainLocations = splitLocations.active && activeMapView === 'distant'
+			? splitLocations.distant
+			: splitLocations.nearby;
+		const insetLocations = splitLocations.active && activeMapView === 'distant'
+			? splitLocations.nearby
+			: splitLocations.distant;
 
-			const imageUrl = loc.thumb || loc.icon;
-
-			const markerEl = document.createElement('div');
-			markerEl.className = 'pam-marker-wrapper';
-
-			const markerContent = document.createElement('div');
-			markerContent.className = 'pam-marker-content';
-			markerContent.style.backgroundImage = `url('${imageUrl}')`;
-			markerContent.style.backgroundColor = baseColor;
-			markerContent.style.border = '2px solid ' + baseColor;
-
-			markerEl.appendChild(markerContent);
-			
-			const popupContent = `
-				<span>
-					<p>
-					<strong><a href="${loc.url}" style="text-decoration:none; color:inherit;">${loc.title}</a></strong><br />
-					<a 
-						href="${loc.url}" 
-						style="text-decoration:none; color:inherit;" ><small>Information</small></a>&nbsp;|&nbsp; 
-					<a 
-						href="https://www.google.com/maps/dir/?api=1&destination=${loc.lat},${loc.lng}&travelmode=walking" 
-						target="_blank" 
-						rel="noopener noreferrer"
-						style="text-decoration:none; color:inherit;" ><small>Directions</small></a>
-					</p>
-				</span>`;
-
-			const marker = new mapboxgl.Marker(markerEl)
-				.setLngLat([loc.lng, loc.lat])
-				.setPopup(new mapboxgl.Popup({ offset: [0, -25] }).setHTML(popupContent))
-				.addTo(map);
-
-			markers.push(marker);
-			bounds.extend([loc.lng, loc.lat]);
+		mainLocations.forEach(loc => {
+			markers.push(createMarker(loc, map));
 		});
 
 		const isSmallScreen = window.innerWidth < 600;
-		map.fitBounds(bounds, { padding: isSmallScreen ? 100 : 200 });
+		fitMapToLocations(map, mainLocations, isSmallScreen ? 100 : 200, activeMapView === 'distant' ? 10 : 13);
+
+		if (canShowInset) {
+			setInsetLabel(activeMapView);
+			insetContainer.classList.add('is-visible');
+			insetLocations.forEach(loc => {
+				const marker = createMarker(loc, insetMap, [0, -20], false);
+				marker.getElement().addEventListener('click', event => {
+					event.stopPropagation();
+					swapMapView();
+				});
+				insetMarkers.push(marker);
+			});
+			requestAnimationFrame(() => {
+				insetMap.resize();
+				fitMapToLocations(insetMap, insetLocations, 45, activeMapView === 'distant' ? 13 : 10);
+			});
+		} else {
+			insetContainer.classList.remove('is-visible');
+		}
 	}
+
+	insetContainer.addEventListener('click', event => {
+		if (
+			event.target.closest('#pam-inset-close') ||
+			event.target.closest('.mapboxgl-popup') ||
+			event.target.closest('.mapboxgl-ctrl')
+		) {
+			return;
+		}
+
+		swapMapView();
+	});
+
+	insetClose.addEventListener('click', event => {
+		event.stopPropagation();
+		insetDismissed = true;
+		insetContainer.classList.remove('is-visible');
+	});
 
 	function getSelectedTypes() {
 		return Array.from(document.querySelectorAll('.type-filter:checked'))
@@ -266,6 +433,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			return matchesType && matchesCollection;
 		});
 
+		insetDismissed = false;
+		activeMapView = 'nearby';
+		currentLocations = filtered;
 		renderMarkers(filtered);
 		updateActiveFiltersDisplay();
 
@@ -364,8 +534,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			.appendChild(createCheckbox(term, 'collection'));
 	});
 
-	// Initial render	
-	renderMarkers(pamLocations);
 	filterLocations();
 
 	map.on('load', () => {
